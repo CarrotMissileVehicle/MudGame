@@ -3,11 +3,9 @@ project(MudGame)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(MudGame main.cpp
-        src/objects/src/object.cpp
-        src/objects/include/object.h
-)
+add_subdirectory(src)
 
-add_subdirectory(src/objects)
-add_subdirectory(src/controller/mining_controller)
+add_executable(MudGame main.cpp)
+target_link_libraries(MudGame PRIVATE objects mining_controller)

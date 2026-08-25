@@ -1,5 +1,6 @@
 add_library(mining_controller
     src/mining_controller.cpp
+    src/mining_calculator.cpp
 )
 
 target_link_libraries(mining_controller
