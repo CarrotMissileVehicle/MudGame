@@ -1,0 +1,27 @@
+{
+  "shallow": {
+    "name": "浅层",
+    "mining_level": 1,
+    "lighting": "none"
+  },
+  "middle": {
+    "name": "中层",
+    "mining_level": 3,
+    "lighting": "torch"
+  },
+  "deep": {
+    "name": "深层",
+    "mining_level": 5,
+    "lighting": "torch"
+  },
+  "crystal": {
+    "name": "水晶层",
+    "mining_level": 8,
+    "lighting": "lantern"
+  },
+  "core": {
+    "name": "地心",
+    "mining_level": 15,
+    "lighting": "lantern"
+  }
+}
