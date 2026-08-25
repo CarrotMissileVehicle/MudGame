@@ -8,17 +8,19 @@ add_executable(MudGame main.cpp
         PlayerStates/src/PlayerState.cpp
         PlayerStates/include/PlayerState.h
         PlayerStates/include/PlayerStateCode.h
-        Map/Position.cpp
-        Map/Position.h
-        Map/Town.cpp
-        Map/Town.h
-        Map/Home.cpp
-        Map/Home.h
-        Map/Mine.cpp
-        Map/Mine.h
-        Map/Farmland.cpp
-        Map/Farmland.h
-        Map/Coast.cpp
-        Map/Coast.h
-        Map/PositionCode.h
+        Map/src/Position.cpp
+        Map/include/Position.h
+        Map/src/Town.cpp
+        Map/include/Town.h
+        Map/src/Home.cpp
+        Map/include/Home.h
+        Map/src/Mine.cpp
+        Map/include/Mine.h
+        Map/src/Farmland.cpp
+        Map/include/Farmland.h
+        Map/src/Coast.cpp
+        Map/include/Coast.h
+        Map/include/PositionCode.h
+        Player/Player.cpp
+        Player/Player.h
 )

@@ -4,7 +4,7 @@
 
 #ifndef MUDGAME_MINE_H
 #define MUDGAME_MINE_H
-#include "Position.h"
+#include "../Position.h"
 
 
 class Mine:Position {

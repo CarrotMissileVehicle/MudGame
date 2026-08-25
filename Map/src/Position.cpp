@@ -2,7 +2,7 @@
 // Created by z2996 on 2026/8/25.
 //
 
-#include "Position.h"
+#include "../include/Position.h"
 
 Position::Position(PositionCode pos) {
     this->pos = pos;

@@ -7,8 +7,6 @@
 #include <map>
 #include <vector>
 #include "PlayerStateCode.h"
-#include "../../Map/PositionCode.h"
-
 
 class PlayerState {
 public:
