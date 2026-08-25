@@ -4,6 +4,7 @@
 
 #ifndef MUDGAME_PLAYER_H
 #define MUDGAME_PLAYER_H
+#include "../Bag/include/Bag.h"
 #include "../Map/include/Position.h"
 #include "../PlayerStates/include/PlayerState.h"
 
@@ -14,6 +15,7 @@ public:
 private:
     Position position;
     PlayerState state;
+    Bag bag;
     int satiety;
     int maxSatiety;
     int farmingExperience;
