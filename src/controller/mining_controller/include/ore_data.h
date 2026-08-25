@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Obj"
+#include "object.h"
 
 #include <iostream>
 #include <string>
@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <map>
 
-class Ore : public
+class Ore : public object
 {
 public:
     struct OreData

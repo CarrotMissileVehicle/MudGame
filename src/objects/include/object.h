@@ -12,7 +12,7 @@ public:
 
     virtual ~object();
 
-private:
+protected:
     int sellingPrice;
     int buyingPrice;
 };
