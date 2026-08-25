@@ -1,0 +1,22 @@
+{
+  "shallow": {
+    "name": "浅层",
+    "mining_level": 1
+  },
+  "middle": {
+    "name": "中层",
+    "mining_level": 3
+  },
+  "deep": {
+    "name": "深层",
+    "mining_level": 5
+  },
+  "crystal": {
+    "name": "水晶层",
+    "mining_level": 8
+  },
+  "core": {
+    "name": "地心",
+    "mining_level": 15
+  }
+}
