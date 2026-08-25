@@ -7,7 +7,7 @@
   "middle": {
     "name": "中层",
     "mining_level": 3,
-    "lighting": "none"
+    "lighting": "torch"
   },
   "deep": {
     "name": "深层",
