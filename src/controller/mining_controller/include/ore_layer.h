@@ -8,6 +8,7 @@
 
 class Layer
 {
+public:
     enum class LightingType {
         None,   // 不需要照明
         Torch,  // 火把
@@ -27,7 +28,8 @@ private:
 
 public:
     // layers
-    std::string get_layer_name();
-
-    size_t get_layer_level();
+    std::string     get_layer_name(const std::string& layer_id) const;
+    size_t          get_layer_level(const std::string& layer_id) const;
+    LightingType    get_lighting_type(const std::string& layer_id) const;
+    bool            requires_lighting(const std::string& layer_id) const;
 };
