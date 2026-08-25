@@ -6,11 +6,11 @@
 #define MUDGAME_OBJECT_H
 
 
-class Object {
+class object {
 public:
-    Object();
+    object();
 
-    virtual ~Object();
+    virtual ~object();
 
 private:
     int sellingPrice;

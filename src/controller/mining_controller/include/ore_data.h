@@ -1,12 +1,14 @@
 #pragma once
 
+#include "Obj"
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <map>
 
-class Ore
+class Ore : public
 {
 public:
     struct OreData
@@ -22,7 +24,7 @@ public:
 
 private:
     using spawnRates = std::unordered_map<std::string, double>;
-    using spawnRateTable = std::unordered_map<std::string, SpawnRates>;
+    using spawnRateTable = std::unordered_map<std::string, spawnRates>;
     using oreTable = std::unordered_map<std::string, OreData>;
 
     spawnRateTable rates_;
