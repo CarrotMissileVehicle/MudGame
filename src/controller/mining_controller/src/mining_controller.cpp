@@ -2,7 +2,7 @@
 
 // 构造：保存矿石数据与时间服务引用
 MiningController::MiningController(
-    const OreData& ore_data,
+    const Ore::OreData& ore_data,
     const TimeService& time_service
 )
 {
@@ -13,25 +13,25 @@ MiningController::MiningController(
 bool MiningController::start_mining(
     MiningState& state,
     std::size_t layer_id,
-    const MiningContext& context
+    const mining::MiningContext& context
 )
 {
     // TODO: 实现
 }
 
 // 每帧更新：依据经过时长产出矿石并返回结果集
-std::vector<MiningResult> MiningController::update(
+std::vector<mining::MiningResult> MiningController::update(
     MiningState& state,
-    const MiningContext& context
+    const mining::MiningContext& context
 )
 {
     // TODO: 实现
 }
 
 // 停止采矿：记录结算并返回最终产出
-std::vector<MiningResult> MiningController::stop_mining(
+std::vector<mining::MiningResult> MiningController::stop_mining(
     MiningState& state,
-    const MiningContext& context
+    const mining::MiningContext& context
 )
 {
     // TODO: 实现
@@ -48,7 +48,7 @@ bool MiningController::is_mining(
 // 校验玩家等级/条件是否允许进入目标层
 bool MiningController::can_enter_layer(
     std::size_t layer_id,
-    const MiningContext& context
+    const mining::MiningContext& context
 ) const
 {
     // TODO: 实现
@@ -57,17 +57,17 @@ bool MiningController::can_enter_layer(
 // 校验目标层所需的照明条件是否满足
 bool MiningController::check_lighting(
     std::size_t layer_id,
-    const MiningContext& context
+    const mining::MiningContext& context
 ) const
 {
     // TODO: 实现
 }
 
 // 按次数产出矿石，累加经验并返回结果
-std::vector<MiningResult> MiningController::produce(
+std::vector<mining::MiningResult> MiningController::produce(
     std::size_t layer_id,
     std::size_t count,
-    const MiningContext& context
+    const mining::MiningContext& context
 ) const
 {
     // TODO: 实现
@@ -76,7 +76,7 @@ std::vector<MiningResult> MiningController::produce(
 // 依据层内分布随机挑选一种矿石 id
 std::string MiningController::random_ore(
     std::size_t layer_id,
-    const MiningContext& context
+    const mining::MiningContext& context
 ) const
 {
     // TODO: 实现

@@ -1,8 +1,10 @@
 #pragma once
 
-namespace mud {
+namespace mud::time
+{
 
-    enum class TimeEvent {
+    enum class TimeEvent
+    {
         MinuteChanged,
         HourChanged,
         DayChanged,

@@ -7,7 +7,7 @@ bool MiningState::is_mining() const noexcept
 }
 
 // 返回当前状态
-MiningStatus MiningState::status() const noexcept
+mining::MiningStatus MiningState::status() const noexcept
 {
     // TODO: 实现
 }
@@ -19,13 +19,13 @@ const std::optional<std::size_t>& MiningState::layer_id() const noexcept
 }
 
 // 返回本次采矿开始时间点
-std::chrono::steady_clock::time_point MiningState::start_time() const noexcept
+time::gameTimePoint MiningState::start_time() const noexcept
 {
     // TODO: 实现
 }
 
 // 返回最近一次心跳时间点
-std::chrono::steady_clock::time_point MiningState::last_tick() const noexcept
+time::gameTimePoint MiningState::last_tick() const noexcept
 {
     // TODO: 实现
 }
@@ -33,7 +33,7 @@ std::chrono::steady_clock::time_point MiningState::last_tick() const noexcept
 // 以指定层与时间点启动采矿状态
 void MiningState::start(
     std::size_t layer_id,
-    std::chrono::steady_clock::time_point now
+    time::gameTimePoint now
 )
 {
     // TODO: 实现
@@ -41,7 +41,7 @@ void MiningState::start(
 
 // 刷新心跳时间点
 void MiningState::update_tick(
-    std::chrono::steady_clock::time_point time
+    time::gameTimePoint time
 )
 {
     // TODO: 实现

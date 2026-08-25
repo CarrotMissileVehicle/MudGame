@@ -1,41 +1,41 @@
 #pragma once
 
 #include "mining_types.h"
+#include "time_service.h"
 
-#include <chrono>
 #include <cstddef>
 #include <optional>
 
-using namespace mud::mining;
+using namespace mud;
 
 class MiningState
 {
 private:
-    MiningStatus status_ = MiningStatus::Idle;
+    mining::MiningStatus status_ = mining::MiningStatus::Idle;
 
     std::optional<std::size_t> layer_id_;
 
-    std::chrono::steady_clock::time_point start_time_{};
-    std::chrono::steady_clock::time_point last_tick_{};
+    time::gameTimePoint start_time_{};
+    time::gameTimePoint last_tick_{};
 
 public:
     bool is_mining() const noexcept;
 
-    MiningStatus status() const noexcept;
+    mining::MiningStatus status() const noexcept;
 
     const std::optional<std::size_t>& layer_id() const noexcept;
 
-    std::chrono::steady_clock::time_point start_time() const noexcept;
+    time::gameTimePoint start_time() const noexcept;
 
-    std::chrono::steady_clock::time_point last_tick() const noexcept;
+    time::gameTimePoint last_tick() const noexcept;
 
     void start(
         std::size_t layer_id,
-        std::chrono::steady_clock::time_point now
+        mud::time::gameTimePoint now
     );
 
     void update_tick(
-        std::chrono::steady_clock::time_point time
+        time::gameTimePoint time
     );
 
     void stop() noexcept;

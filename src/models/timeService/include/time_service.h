@@ -5,20 +5,22 @@
 
 #include <functional>
 
-namespace mud {
+namespace mud
+{
 
-    class TimeService {
+    class TimeService
+    {
     public:
-        using Listener = std::function<void(TimeEvent)>;
+        using Listener = std::function<void(time::TimeEvent)>;
 
     public:
         TimeService();
 
-        gameTimePoint now() const;
+        time::gameTimePoint now() const;
 
-        void tick(gameDuration real_delta);
+        void tick(time::gameDuration real_delta);
 
-        void set_time(gameTimePoint time);
+        void set_time(time::gameTimePoint time);
 
         void set_time_scale(double scale);
 
@@ -27,7 +29,7 @@ namespace mud {
         void subscribe(Listener listener);
 
     private:
-        gameTimePoint current_time_;
+        time::gameTimePoint current_time_;
         double time_scale_{1.0};
 
         // 具体实现暂时隐藏

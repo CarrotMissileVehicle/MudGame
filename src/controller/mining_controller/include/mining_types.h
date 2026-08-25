@@ -1,6 +1,7 @@
 #pragma once
 
-#include <chrono>
+#include "time_service.h"
+
 #include <cstddef>
 #include <string>
 
@@ -33,7 +34,7 @@ namespace mud::mining
     struct MiningTool // 等工具部分完善
     {
         MiningSpeed mining_speed;
-        std::chrono::seconds interval{static_cast<size_t>(mining_speed)};
+        time::gameDuration interval{std::chrono::seconds{static_cast<size_t>(mining_speed)}};
         double rare_bonus = 0.0;
     };
 

@@ -1,18 +1,21 @@
 #pragma once
 
-#include <chrono>
+#include "time_service.h"
+
 #include <cstddef>
+
+using namespace mud;
 
 class MiningCalculator
 {
 public:
     static std::size_t calculate_production_count(
-        std::chrono::seconds elapsed,
-        std::chrono::seconds interval
+        time::gameDuration elapsed,
+        time::gameDuration interval
     ) noexcept;
 
-    static std::chrono::seconds calculate_consumed_time(
-        std::chrono::seconds elapsed,
-        std::chrono::seconds interval
+    static time::gameDuration calculate_consumed_time(
+        time::gameDuration elapsed,
+        time::gameDuration interval
     ) noexcept;
 };
