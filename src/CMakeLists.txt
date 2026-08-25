@@ -1,0 +1,2 @@
+add_subdirectory(objects)
+add_subdirectory(controller/mining_controller)
