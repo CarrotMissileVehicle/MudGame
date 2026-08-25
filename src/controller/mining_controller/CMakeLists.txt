@@ -9,6 +9,7 @@ add_library(mining_controller
 target_link_libraries(mining_controller
     PUBLIC
         objects
+        time_service
 )
 
 target_include_directories(mining_controller

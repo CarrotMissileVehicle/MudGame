@@ -1,2 +1,3 @@
 add_subdirectory(objects)
 add_subdirectory(controller/mining_controller)
+add_subdirectory(models/timeService)
