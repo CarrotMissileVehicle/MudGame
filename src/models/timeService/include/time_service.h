@@ -14,11 +14,11 @@ namespace mud {
     public:
         TimeService();
 
-        GameTimePoint now() const;
+        gameTimePoint now() const;
 
-        void tick(GameDuration real_delta);
+        void tick(gameDuration real_delta);
 
-        void set_time(GameTimePoint time);
+        void set_time(gameTimePoint time);
 
         void set_time_scale(double scale);
 
@@ -27,7 +27,7 @@ namespace mud {
         void subscribe(Listener listener);
 
     private:
-        GameTimePoint current_time_;
+        gameTimePoint current_time_;
         double time_scale_{1.0};
 
         // 具体实现暂时隐藏

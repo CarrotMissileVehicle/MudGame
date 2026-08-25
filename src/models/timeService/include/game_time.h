@@ -4,7 +4,7 @@
 
 namespace mud {
 
-    using GameTimePoint = std::chrono::system_clock::time_point;
-    using GameDuration = std::chrono::milliseconds;
+    using gameTimePoint = std::chrono::system_clock::time_point;
+    using gameDuration = std::chrono::milliseconds;
 
 }
