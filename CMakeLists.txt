@@ -4,6 +4,6 @@ project(MudGame)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(MudGame main.cpp
-        Objects/include/Object.cpp
-        Objects/src/Object.h
+        Objects/src/Object.cpp
+        Objects/include/Object.h
 )
