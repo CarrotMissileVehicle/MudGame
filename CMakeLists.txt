@@ -4,7 +4,7 @@ project(MudGame)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(MudGame main.cpp
-        Controller/include/PlayerStateMachine.h
+        controller/include/PlayerStateMachine.h
         PlayerStates/src/PlayerState.cpp
         PlayerStates/include/PlayerState.h
         PlayerStates/include/PlayerStateCode.h
