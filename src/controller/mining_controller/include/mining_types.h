@@ -4,7 +4,7 @@
  *
  * 定义采矿状态、分层、速度、工具、上下文及产出结果的枚举/结构体。
  *
- * 依赖：time_service（time::gameDuration）。
+ * 依赖：time_service（time::gameMinutes）。
  */
 #pragma once
 
@@ -46,7 +46,7 @@ namespace mud::mining
     struct MiningTool // 等工具部分完善
     {
         MiningSpeed mining_speed;   // 工具速度档位
-        time::gameDuration interval{std::chrono::seconds{static_cast<size_t>(mining_speed)}}; // 单次采矿间隔
+        time::gameMinutes interval{static_cast<std::int64_t>(mining_speed)}; // 单次采矿间隔（游戏分钟）
         double rare_bonus = 0.0;    // 稀有矿产加成
     };
 

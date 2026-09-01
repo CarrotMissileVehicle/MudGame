@@ -24,8 +24,8 @@ private:
 
     std::optional<std::size_t> layer_id_; // 采矿目标层（未采矿时为空）
 
-    time::gameTimePoint start_time_{}; // 本次采矿开始时间
-    time::gameTimePoint last_tick_{};  // 最近一次进度更新时间
+    time::GameDateTime start_time_{}; // 本次采矿开始时间
+    time::GameDateTime last_tick_{};  // 最近一次进度更新时间
 
 public:
     /** @brief 是否处于采矿中。 */
@@ -38,20 +38,20 @@ public:
     const std::optional<std::size_t>& layer_id() const noexcept;
 
     /** @brief 返回本次采矿开始时间。 */
-    time::gameTimePoint start_time() const noexcept;
+    time::GameDateTime start_time() const noexcept;
 
     /** @brief 返回最近一次进度更新时间。 */
-    time::gameTimePoint last_tick() const noexcept;
+    time::GameDateTime last_tick() const noexcept;
 
     /** @brief 开始采矿：设置状态、目标层与开始/计时时间。 */
     void start(
         std::size_t layer_id,
-        mud::time::gameTimePoint now
+        mud::time::GameDateTime now
     );
 
     /** @brief 更新进度计时点为当前时间。 */
     void update_tick(
-        time::gameTimePoint time
+        time::GameDateTime time
     );
 
     /** @brief 停止采矿：复位状态为 Idle。 */

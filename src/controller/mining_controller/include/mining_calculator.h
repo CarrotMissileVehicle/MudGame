@@ -4,7 +4,7 @@
  *
  * 根据经过时间与单次间隔，计算应产生的采矿次数及实际消耗时间。
  *
- * 依赖：time_service（time::gameDuration）。
+ * 依赖：time_service（time::gameMinutes）。
  */
 #pragma once
 
@@ -20,13 +20,13 @@ class MiningCalculator
 public:
     /** @brief 计算给定经过时间内应完成的采矿次数（仅需通过 interval 对齐）。 */
     static std::size_t calculate_production_count(
-        time::gameDuration elapsed,
-        time::gameDuration interval
+        time::gameMinutes elapsed,
+        time::gameMinutes interval
     ) noexcept;
 
     /** @brief 计算实际消耗的时间（对齐到 interval 的整数倍）。 */
-    static time::gameDuration calculate_consumed_time(
-        time::gameDuration elapsed,
-        time::gameDuration interval
+    static time::gameMinutes calculate_consumed_time(
+        time::gameMinutes elapsed,
+        time::gameMinutes interval
     ) noexcept;
 };
