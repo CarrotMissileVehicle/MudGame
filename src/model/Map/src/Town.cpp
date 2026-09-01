@@ -3,3 +3,9 @@
 //
 
 #include "../include/Town.h"
+
+#include "model/Map/include/Home.h"
+
+Position * Town::GoDown() {
+    return new Home();
+}

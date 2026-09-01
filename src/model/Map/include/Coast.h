@@ -7,9 +7,9 @@
 #include "Position.h"
 
 
-class Coast : Position {
+class Coast :public Position {
 public:
-    Coast() : Position(PositionCode::Coast) {
+    Coast() : Position(PositionCode::AtCoast) {
     }
 
     Position *GoLeft() override;

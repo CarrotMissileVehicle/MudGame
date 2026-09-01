@@ -7,9 +7,9 @@
 #include "Position.h"
 
 
-class Mine:Position {
+class Mine : public Position {
     public:
-    Mine() : Position(PositionCode::Mine) {
+    Mine() : Position(PositionCode::AtMine) {
     }
     Position *GoUp() override;
 };

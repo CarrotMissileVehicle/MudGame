@@ -3,3 +3,9 @@
 //
 
 #include "../include/Farmland.h"
+
+#include "model/Map/include/Home.h"
+
+Position * Farmland::GoRight() {
+    return new Home();
+}

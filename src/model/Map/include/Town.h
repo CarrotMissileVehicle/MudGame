@@ -7,9 +7,9 @@
 #include "Position.h"
 
 
-class Town : Position {
+class Town :public Position {
 public:
-    Town() : Position(PositionCode::Town) {
+    Town() : Position(AtTown) {
     }
     Position *GoDown() override;
 };

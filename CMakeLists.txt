@@ -3,34 +3,52 @@ project(MudGame)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(MudGame main.cpp
+# 公共源文件
+set(MODEL_SOURCES
         src/model/Objects/src/Object.cpp
-        src/model/Objects/include/Object.h
         src/model/PlayerStates/src/PlayerState.cpp
-        src/model/PlayerStates/include/PlayerState.h
-        src/model/PlayerStates/include/PlayerStateCode.h
         src/model/Map/src/Position.cpp
-        src/model/Map/include/Position.h
         src/model/Map/src/Town.cpp
-        src/model/Map/include/Town.h
         src/model/Map/src/Home.cpp
-        src/model/Map/include/Home.h
         src/model/Map/src/Mine.cpp
-        src/model/Map/include/Mine.h
         src/model/Map/src/Farmland.cpp
-        src/model/Map/include/Farmland.h
         src/model/Map/src/Coast.cpp
-        src/model/Map/include/Coast.h
-        src/model/Map/include/PositionCode.h
-        src/Controller/Player/Player.cpp
-        src/Controller/Player/Player.h
         src/model/Bag/src/Bag.cpp
-        src/model/Bag/include/Bag.h
-        src/model/Bag/include/Bag.h
-        src/model/Bag/include/Bag.h
-        src/model/Map/include/Position.h
-        src/view/src/StatusView.cpp
-        src/view/include/StatusView.h
-        src/tool/src/PlayerSerializer.cpp
-        src/tool/include/PlayerSerializer.h
+        src/controller/Player/include/Move.h
 )
+
+set(CONTROLLER_SOURCES
+        src/controller/Player/src/Player.cpp
+        src/controller/Player/src/Move.cpp
+        src/controller/Player/include/Move.h
+)
+
+set(VIEW_SOURCES
+        src/view/src/StatusView.cpp
+        src/controller/Player/include/Move.h
+)
+
+set(TOOL_SOURCES
+        src/tool/src/PlayerSerializer.cpp
+        src/controller/Player/include/Move.h
+)
+
+# 主程序
+add_executable(MudGame main.cpp
+        ${MODEL_SOURCES}
+        ${CONTROLLER_SOURCES}
+        ${VIEW_SOURCES}
+        ${TOOL_SOURCES}
+        src/controller/Player/include/Move.h
+)
+
+# 测试程序
+add_executable(MudGameTest test/test_player.cpp
+        ${MODEL_SOURCES}
+        ${CONTROLLER_SOURCES}
+        ${TOOL_SOURCES}
+        src/controller/Player/include/Move.h
+)
+
+target_include_directories(MudGame PRIVATE src)
+target_include_directories(MudGameTest PRIVATE src)

@@ -6,11 +6,11 @@
 #define MUDGAME_POSITIONCODE_H
 
 enum PositionCode {
-    Home=20000,
-    Farmland,
-    Coast,
-    Mine,
-    Town
+    AtHome=20000,
+    AtFarmland,
+    AtCoast,
+    AtMine,
+    AtTown,
 };
 
 #endif //MUDGAME_POSITIONCODE_H

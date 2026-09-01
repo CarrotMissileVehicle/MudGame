@@ -7,9 +7,9 @@
 #include "Position.h"
 
 
-class Home : Position {
+class Home : public Position {
 public:
-    explicit Home() : Position(PositionCode::Home) {
+    explicit Home() : Position(AtHome) {
     }
     Position *GoUp() override;
     Position *GoDown() override;

@@ -25,11 +25,11 @@ public:
 private:
     StateCode stateCode;
     std::map<PositionCode, std::vector<StateCode> > ableState = {
-        {Home, {Sleeping}},
-        {Town, {Shopping, Repairing}},
-        {Coast, {Fishing}},
-        {Mine, {Mining}},
-        {Farmland, {Seeding, Watering, Fertilizing}}
+        {AtHome, {Sleeping}},
+        {AtTown, {Shopping, Repairing}},
+        {AtCoast, {Fishing}},
+        {AtMine, {Mining}},
+        {AtFarmland, {Seeding, Watering, Fertilizing}}
     };
 };
 

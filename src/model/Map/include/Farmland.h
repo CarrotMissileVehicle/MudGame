@@ -7,9 +7,9 @@
 #include "Position.h"
 
 
-class Farmland : Position {
+class Farmland : public Position {
 public:
-    Farmland() : Position(PositionCode::Farmland) {
+    Farmland() : Position(PositionCode::AtFarmland) {
     }
     Position *GoRight() override;
 };

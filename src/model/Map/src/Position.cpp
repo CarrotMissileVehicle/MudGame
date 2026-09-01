@@ -8,6 +8,7 @@ Position::Position(PositionCode pos) {
     this->pos = pos;
 }
 
+
 PositionCode Position::GetCode() const {
     return pos;
 }

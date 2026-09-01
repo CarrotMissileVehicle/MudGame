@@ -3,3 +3,9 @@
 //
 
 #include "../include/Coast.h"
+
+#include "model/Map/include/Home.h"
+
+Position * Coast::GoLeft() {
+    return new Home();
+}

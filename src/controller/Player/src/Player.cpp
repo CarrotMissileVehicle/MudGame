@@ -2,10 +2,10 @@
 // Created by z2996 on 2026/8/25.
 //
 
-#include "Player.h"
+#include "../include/Player.h"
 
 Player::Player()
-    : position(Home), state(Waiting), satiety(100), maxSatiety(100),
+    : position(AtHome), state(Waiting), satiety(100), maxSatiety(100),
       farmingExperience(0), fishExperience(0), mineExperience(0) {
 }
 
