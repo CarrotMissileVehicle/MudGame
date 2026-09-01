@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "Object.h"   // 物品基类：工具作为一种物品，可同时持有多件
+
 namespace mud::tool
 {
     enum class ToolId
@@ -31,8 +33,9 @@ namespace mud::tool
         int repair_base_gold;
     };
 
-    // 单件工具 Model：等级、耐久的纯逻辑
-    class Tool
+    // 单件工具 Model：继承物品基类 Object，故工具是可持有的物品，可被同时持有多件。
+    // 注意：工具的"耐久"以本类 durability_ 为准；Object::GetHealth() 仅为物品元数据初始值。
+    class Tool : public Object
     {
     public:
         explicit Tool(ToolId id);

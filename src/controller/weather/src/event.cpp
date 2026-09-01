@@ -26,17 +26,23 @@ namespace mud::event
     {
         active_.clear();
 
-        // 概率类事件：暴风雨 / 台风 / 小雨（同日只判一次）
+        // 概率类事件采用"加权轮盘"：把暴风雨/台风/小雨按概率累积成一段段区间，
+        // rand_chance(1-100) 落在哪段就触发哪一类——每天 08:00 至多触发一个自然事件，
+        // 避免多个事件共用同一随机数造成互斥与概率失真。
+        // 累积区间：暴风雨 8% (1-8)、台风 3% (9-11)、小雨 20% (12-31)
+        int acc = 0;
         for (std::size_t i = 0; i < kDailyProbCount; ++i) {
-            if (rand_chance < kDailyProb[i].chance_percent) {
+            acc += kDailyProb[i].chance_percent;
+            if (rand_chance > 0 && rand_chance <= acc) {
                 active_.insert(kDailyProb[i].type);
+                break;
             }
         }
 
-        // 虫害：累计 3 天未浇水
+        // 虫害：累计 3 天未浇水 → 独立于自然事件触发
         if (neglect_water) active_.insert(EventType::Pest);
 
-        // 旅行商人：每周五 100% 在场
+        // 旅行商人：每周五 100% 在场 → 独立于自然事件触发
         if (day_of_week == 5) active_.insert(EventType::Traveler);
     }
 

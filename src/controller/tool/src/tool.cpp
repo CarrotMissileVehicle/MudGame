@@ -4,7 +4,11 @@
 namespace mud::tool
 {
     Tool::Tool(ToolId id)
-        : id_(id), level_(1), durability_(kToolConfigs[static_cast<int>(id)].max_durability)
+        : Object(kToolConfigs[static_cast<int>(id)].name,   // 物品名
+                 "耐久型工具，可升级与修复。",                // 物品描述
+                 kToolConfigs[static_cast<int>(id)].max_durability, // health：初始耐久副本
+                 0, 0),                                       // 售价/买价：暂为 0
+          id_(id), level_(1), durability_(kToolConfigs[static_cast<int>(id)].max_durability)
     {
     }
 

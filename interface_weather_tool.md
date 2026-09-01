@@ -234,18 +234,30 @@ public:
 ```cpp
 ToolController(mud::Player& player, mud::Inventory& inventory);  // 注入金币/背包
 
-bool use_tool(mud::tool::ToolId id);        // 用一次；损坏则 false
-bool is_broken(mud::tool::ToolId id) const;
-int  level(mud::tool::ToolId id) const;
-int  durability(mud::tool::ToolId id) const;
-std::string name(mud::tool::ToolId id) const;
-int  level_bonus(mud::tool::ToolId id) const;
+// ---- 持有：每类工具可同时持有多件（工具继承物品基类 Object）----
+std::size_t tool_count(mud::tool::ToolId id) const; // 该类型当前持有件数
+bool add_tool(mud::tool::ToolId id);                // 新增一件同类型工具
 
-bool upgrade(mud::tool::ToolId id);          // 先扣金币→查验材料→够才升级；不足自动退钱
-bool repair(mud::tool::ToolId id, bool use_ore); // use_ore=true 用矿石(免金币)，否则按损耗比例收金币
+// ---- 使用：自动选一件未损坏的，一件用尽时自动换下一件 ----
+bool use_tool(mud::tool::ToolId id);                   // 自动选第一件未损坏的；全部损坏则 false
+bool use_tool(mud::tool::ToolId id, std::size_t slot); // 明确使用第 slot 件
+bool is_broken(mud::tool::ToolId id) const;            // 该类型是否已无可用工具（全部损坏）
+std::size_t broken_count(mud::tool::ToolId id) const;  // 该类型已损坏件数
+
+// ---- 查询（slot 默认主件 = 0）----
+int  level(mud::tool::ToolId id, std::size_t slot = 0) const;
+int  durability(mud::tool::ToolId id, std::size_t slot = 0) const;
+int  max_durability(mud::tool::ToolId id, std::size_t slot = 0) const;
+int  level_bonus(mud::tool::ToolId id, std::size_t slot = 0) const;
+std::string name(mud::tool::ToolId id) const;
+
+// ---- 升级 / 修复（slot 默认主件 = 0）----
+bool upgrade(mud::tool::ToolId id, std::size_t slot = 0);         // 先扣金币→查验材料→够才升级；不足自动退钱
+bool repair(mud::tool::ToolId id, bool use_ore, std::size_t slot = 0); // use_ore=true 用矿石(免金币)，否则按损耗比例收金币
 ```
 
-内部持有 `tools_[kToolCount]`，按 `ToolId` 索引。
+内部按 `ToolId` 持有 `std::vector<Tool>`（默认每类 1 件），支持同时持有多件。
+`Tool` 继承物品基类 `Object`（`src/model/Objects/include/Object.h`），故工具是可持有的物品；其耐久以 `Tool::durability` 为准。
 
 ---
 
@@ -283,34 +295,22 @@ mud::Player player;
 mud::Inventory inventory;
 ToolController tool(player, inventory);
 
-if (!tool.is_broken(ToolId::Pickaxe)) tool.use_tool(ToolId::Pickaxe); // 挖矿
-bool ok = tool.upgrade(ToolId::Hoe);           // 升一级
-bool r  = tool.repair(ToolId::Pickaxe, true);  // 用矿石修
+// 多件持有：开局再添一把矿镐，共 2 件
+tool.add_tool(ToolId::Pickaxe);
+std::size_t n = tool.tool_count(ToolId::Pickaxe);      // 2
+
+// 挖矿：自动选一件未损坏的；第一件耐久用尽自动换第二件，不必急着修
+bool ok = tool.use_tool(ToolId::Pickaxe);
+if (tool.is_broken(ToolId::Pickaxe))
+    std::printf("本类型全部损坏：%zu 件，请修复或再添置\n", tool.broken_count(ToolId::Pickaxe));
+
+bool up = tool.upgrade(ToolId::Hoe, /*slot=*/0);          // 升主件一级
+bool r  = tool.repair(ToolId::Pickaxe, /*use_ore=*/true, /*slot=*/0); // 用矿石修第 1 件
 ```
 
 ---
 
-## 10. 本地演示
-
-`demo/demo_systems.cpp` 提供一个可在命令行跑一遍逻辑的 `main`（进不了项目 CMake）：
-- 5 天天气 + 每日事件演练、采矿事件 20 次采样；
-- 工具初始状态、使用扣耐久、升级、矿石修复。
-
-构建（VS 开发环境 cl）：
-
-```powershell
-cl /nologo /utf-8 /std:c++20 /EHsc \
-   /I src/controller/weather/include /I src/controller/tool/include \
-   /I src/models/farm/include /I src/models/player/include /I src/models/inventory/include \
-   src/controller/weather/src/weather.cpp src/controller/weather/src/event.cpp \
-   src/controller/weather/src/weather_controller.cpp \
-   src/controller/tool/src/tool.cpp src/controller/tool/src/tool_controller.cpp \
-   demo/demo_systems.cpp /Fe:build_demo/demo_systems.exe
-```
-
----
-
-## 11. 待确认 / 已知问题
+## 10. 待确认 / 已知问题
 
 1. **宝箱概率与注释不符**：`event.cpp` 中 `roll_mining_event` 判定 `rand_chance >= 80`（≈21%），但注释写"固定 8%"。需按 `proj.md` 确认宝箱概率数值（如需 8%，应改 `>= 92`）。
 2. **中文编码**：含 UTF-8 中文的文件必须带 `/utf-8` 编译，否则 MSVC 按 GBK 读取会报错。

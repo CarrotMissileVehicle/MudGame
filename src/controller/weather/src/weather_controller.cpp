@@ -1,6 +1,5 @@
 #include "weather_controller.h"
 
-#include <chrono>
 #include <random>
 
 namespace
@@ -19,12 +18,40 @@ WeatherController::WeatherController(mud::Farm& farm)
 {
 }
 
+// ---- 帧驱动入口：每帧调用 ----
+// 参数是当前时刻的时间戳（绝对时间：hour 0-23、minute 0-59、day 为游戏天数），
+// 不做增量累加，直接作为内部时钟，再据此驱动天气/事件逻辑。
+// （游戏时间推进本身由调用方负责，本类只消费时间戳，不负责时间流逝。）
+void WeatherController::frame_update(int day, int hour, int minute)
+{
+    current_.day    = day;
+    current_.hour   = hour;
+    current_.minute = minute;
+
+    update(current_.day, current_.hour);
+}
+
+Time WeatherController::now() const
+{
+    return current_;
+}
+
 void WeatherController::update(int day, int hour)
 {
-    // 1) 跨天（凌晨 6 点算新的一天开始）：生成当天天气
+    // 1) 跨天（凌晨 6 点算新的一天开始）：
+    //    结算"上一天"是否浇水 → 更新连续未浇水天数；再生成当天天气，
+    //    雨天自动浇水并视为当天已浇水。
     if (day != last_weather_day_ && hour >= 6) {
+        // 上一天若无任何浇水（自动/手动都无）则计入未浇水天数，否则清零
+        if (!watered_today_) {
+            ++neglect_days_;
+        } else {
+            neglect_days_ = 0;
+        }
+
         last_weather_day_ = day;
         weather_.generate_daily();
+        watered_today_ = weather_.auto_water();   // 雨天自动浇水 = 当天已浇水
         if (weather_.auto_water()) {
             farm_.auto_water();   // 雨天自动浇水
         }
@@ -33,12 +60,20 @@ void WeatherController::update(int day, int hour)
     // 2) 早上 8 点触发当天随机事件（同日只触发一次）
     if (day != last_event_day_ && hour == 8) {
         last_event_day_ = day;
-        // 目前"虫害/旅行商人"条件由调用方后续完善前先用占位：
-        //   day_of_week 固定为 1，neglect_water 固定 false
-        const int   day_of_week   = 1;
-        const bool  neglect_water = false;
-        event_.generate_daily_events(day_of_week, neglect_water, roll_1_to_100());
+        const bool neglect_water = (neglect_days_ >= 3);   // 连续 3 天未浇水
+        event_.generate_daily_events(day_of_week(day), neglect_water, roll_1_to_100());
     }
+}
+
+// 第 0 天为周一(1)，周末不对应；周五 = day%7==4 时返回 5。
+int WeatherController::day_of_week(int day)
+{
+    return (day % 7) + 1;
+}
+
+void WeatherController::mark_watered()
+{
+    watered_today_ = true;
 }
 
 // ---- 天气查询转发 ----
