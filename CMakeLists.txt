@@ -1,3 +1,12 @@
+# =====================================================================
+# MudGame 顶层 CMake 构建脚本
+# ---------------------------------------------------------------------
+# 职责：
+#   1. 声明 C++23 标准与构建要求
+#   2. 通过 FetchContent 拉取头文件库 CLI11（用于命令行解析）
+#   3. 引入 src 子目录并构建可执行目标 MudGame
+#
+# =====================================================================
 cmake_minimum_required(VERSION 4.0)
 project(MudGame)
 
@@ -5,9 +14,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# CLI11: header-only 命令行解析库，用于命令解析（cmd_parser）
-# 首次拉取后会生成 CLI11::CLI11 目标，其 include 路径位于构建目录 _deps 下，
-# 需在 CLion 中 Reload CMake Project 后 IDE 才能解析到 <CLI/CLI.hpp>。
 include(FetchContent)
 FetchContent_Declare(cli11
     GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git

@@ -1,3 +1,12 @@
+/**
+ * @file input_parser.h
+ * @brief 命令行解析器（InputParser）及命令数据结构定义。
+ *
+ * 基于 CLI11 将用户输入解析为结构化的 Command 对象（点分 verb、
+ * 位置参数、命名参数），供派发器路由使用。
+ *
+ * 依赖：CLI11 第三方库。
+ */
 #pragma once
 
 #include <CLI/CLI.hpp>
@@ -8,6 +17,12 @@
 
 namespace mud::cmd
 {
+    /**
+     * @brief 解析后的命令结构。
+     *
+     * verb 为点分动词（如 mine.start）；args 为位置参数；
+     * options 为命名参数（--layer -> "2"）；raw 保留原始输入。
+     */
     struct Command
     {
         std::string verb; // 点分 verb 如 mine.start
@@ -17,6 +32,9 @@ namespace mud::cmd
     };
 }
 
+/**
+ * @brief 命令行解析器：维护 CLI11 schema 并将输入行转换为 Command。
+ */
 class InputParser
 {
 public:

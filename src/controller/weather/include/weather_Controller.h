@@ -1,3 +1,12 @@
+/**
+ * @file weather_Controller.h
+ * @brief 天气与事件控制器（WeatherController）。
+ *
+ * 协调时间、天气、农田等子系统：负责跨天生成天气、定时触发随机事件，
+ * 并提供天气/事件查询接口给其他系统调用。依赖通过构造函数注入。
+ *
+ * 依赖：event、weather、time_system、farm。
+ */
 #pragma once              // 防止头文件被重复包含
 
 #include <string>         // 字符串类型

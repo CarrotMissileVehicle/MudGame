@@ -1,3 +1,9 @@
+/**
+ * @file time_service.cpp
+ * @brief 游戏时间服务实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "time_service.h"
 
 // 构造：初始化当前游戏时间

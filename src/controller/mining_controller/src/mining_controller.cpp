@@ -1,3 +1,9 @@
+/**
+ * @file mining_controller.cpp
+ * @brief 采矿控制器实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "mining_controller.h"
 
 // 构造：保存矿石数据与时间服务引用

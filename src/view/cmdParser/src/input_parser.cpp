@@ -1,8 +1,21 @@
+/**
+ * @file input_parser.cpp
+ * @brief 命令行解析器实现。
+ *
+ * 基于 CLI11 声明式 schema 定义各子命令及选项，并将输入行转换为
+ * 结构化的 mud::cmd::Command 对象。
+ */
 #include "input_parser.h"
 
 #include <string>
 #include <vector>
 
+/**
+ * @brief 构造函数：声明命令解析 schema。
+ *
+ * 使用点分动词作为各子命令名（如 mine.start），并为其声明命名参数。
+ * 带必选参数的子命令用 required() 标记。
+ */
 InputParser::InputParser()
 {
     auto* start = app_.add_subcommand("mine.start", "开始采矿");
@@ -20,13 +33,18 @@ InputParser::InputParser()
     app_.add_subcommand("save", "保存游戏");
 }
 
+/**
+ * @brief 解析单行输入为命令对象。
+ * @param line 用户输入的命令行。
+ * @return 解析结果；空行返回空 verb，解析错误返回 verb="error"，--help 返回 verb="help"。
+ */
 mud::cmd::Command InputParser::parse(const std::string& line)
 {
     mud::cmd::Command cmd;
     cmd.raw = line;
     if (line.empty()) return cmd; // 空输入 → verb 为空
 
-    app_.clear(); // 关键：每轮归零解析状态
+    app_.clear(); // 关键：每轮归零解析状态，避免上一轮残留选项
     try
     {
         // 字符串入口（本代 CLI11 的 parse(vector) 有缺陷：不消费选项值），第二参 false=不含程序名
@@ -44,7 +62,7 @@ mud::cmd::Command InputParser::parse(const std::string& line)
         return cmd;
     }
 
-    // 扁平设计：根上已解析的子命令（至多一个）
+    // 扁平设计：根上已解析的子命令（至多一个），提取动词、命名选项与剩余位置参数
     const auto subs = app_.get_subcommands(); // parsed_subcommands_
     if (!subs.empty())
     {
@@ -53,6 +71,7 @@ mud::cmd::Command InputParser::parse(const std::string& line)
         for (const auto* opt : leaf->get_options())
         {
             if (opt->count() == 0) continue;
+            // 去掉选项名前导 '-'，统一存入 options 映射
             std::string name = opt->get_name();
             while (name.size() > 1 && name[0] == '-') name = name.substr(1);
             cmd.options[name] = opt->as<std::string>();
@@ -62,4 +81,5 @@ mud::cmd::Command InputParser::parse(const std::string& line)
     return cmd;
 }
 
+/** @brief 返回 CLI11 生成的完整帮助文本。 */
 std::string InputParser::help_text() const { return app_.help(); }
