@@ -11,7 +11,7 @@
 namespace mud::time
 {
 
-    using gameTimePoint = std::chrono::system_clock::time_point; // 游戏时间点
+    using gameTimePoint = std::chrono::steady_clock::time_point; // 游戏时间点
     using gameDuration = std::chrono::milliseconds;              // 游戏时间步长（毫秒）
 
 }
