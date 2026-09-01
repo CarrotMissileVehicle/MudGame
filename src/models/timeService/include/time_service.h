@@ -23,6 +23,7 @@ namespace mud
     private:
         time::gameTimePoint startTime_;     // 游戏绝对时间零点（0 时刻）
         time::gameTimePoint session_start_; // 本次真实会话起点（构造时注入）
+        time::gameTimePoint last_tick_time_; // 上一帧时间戳
         time::gameDuration total_runtime_;  // 历史累计游戏运行总长（来自 JSON）
 
     public:
@@ -56,8 +57,7 @@ namespace mud
         void subscribe(Listener listener);
 
     private:
-        time::gameTimePoint current_time_; // 当前游戏时间
-        double time_scale_{1.0};           // 时间流速倍率（默认 1.0）
+        double time_scale_{1.0}; // 时间流速倍率（默认 1.0）
 
         // 具体实现暂时隐藏
     };

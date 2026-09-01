@@ -8,7 +8,8 @@
 mud::TimeService::TimeService(mud::time::gameTimePoint origin,
                               mud::time::gameDuration total_runtime,
                               mud::time::gameTimePoint session_start)
-    : startTime_(origin), session_start_(session_start), total_runtime_(total_runtime)
+    : startTime_(origin), session_start_(session_start), last_tick_time_(session_start),
+      total_runtime_(total_runtime)
 {
 }
 
@@ -23,7 +24,7 @@ mud::time::gameTimePoint mud::TimeService::now() const
     return startTime_ + total_runtime_ + scaled_ms;
 }
 
-// 返回含本次会话的当前累计总长（供调用方持久化）
+// 返回含本次会话的当前累计总长
 mud::time::gameDuration mud::TimeService::session_total() const
 {
     auto real_elapsed = std::chrono::steady_clock::now() - session_start_;
@@ -34,28 +35,33 @@ mud::time::gameDuration mud::TimeService::session_total() const
     return total_runtime_ + scaled_ms;
 }
 
-// 按真实经过时长推进游戏时间（受时间倍率影响）
-void mud::TimeService::tick(mud::time::gameDuration real_delta)
+// 按帧驱动：统一比对两帧游戏时差，为时间事件判定提供刻度；不维护状态钟。
+void mud::TimeService::tick(mud::time::gameDuration /*real_delta*/)
 {
-    // TODO: 实现
+    // now() 已是实时推导且含倍率，tick 不再二次缩放，仅比对两帧游戏时差。
+    const auto cur = now();
+    const auto delta = cur - last_tick_time_; // 游戏时差
+    last_tick_time_ = cur;
+    // TODO: 依据 delta 判定跨日/整点等时间事件并通知订阅者
+    (void)delta;
 }
 
 // 直接设置当前游戏时间
 void mud::TimeService::set_time(mud::time::gameTimePoint time)
 {
-    // TODO: 实现
+    
 }
 
 // 设置游戏时间流速倍率
 void mud::TimeService::set_time_scale(double scale)
 {
-    // TODO: 实现
+    time_scale_ = scale;
 }
 
 // 返回当前时间流速倍率
 double mud::TimeService::time_scale() const
 {
-    // TODO: 实现
+    return time_scale_;
 }
 
 // 注册时间事件监听器
