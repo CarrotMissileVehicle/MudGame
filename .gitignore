@@ -1,3 +1,6 @@
+# VS IDE 缓存（不应纳入版本控制）
+.vs/
+
 ### C++ template
 # Prerequisites
 *.d
