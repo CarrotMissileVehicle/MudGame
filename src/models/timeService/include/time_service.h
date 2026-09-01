@@ -20,15 +20,25 @@ namespace mud
     /** @brief 游戏时间服务：统一驱动游戏内时间推进与事件通知。 */
     class TimeService
     {
+    private:
+        time::gameTimePoint startTime_;     // 游戏绝对时间零点（0 时刻）
+        time::gameTimePoint session_start_; // 本次真实会话起点（构造时注入）
+        time::gameDuration total_runtime_;  // 历史累计游戏运行总长（来自 JSON）
+
     public:
         /** @brief 时间事件监听器回调类型。 */
         using Listener = std::function<void(time::TimeEvent)>;
 
     public:
-        TimeService();
+        explicit TimeService(time::gameTimePoint origin,
+                             time::gameDuration total_runtime,
+                             time::gameTimePoint session_start);
 
         /** @brief 返回当前游戏时间点。 */
-        time::gameTimePoint now() const;
+        [[nodiscard]] time::gameTimePoint now() const;
+
+        /** @brief 返回含本次会话的当前累计总长（供调用方持久化）。 */
+        [[nodiscard]] time::gameDuration session_total() const;
 
         /** @brief 按真实经过时长推进游戏时间（受时间倍率影响）。 */
         void tick(time::gameDuration real_delta);
@@ -40,7 +50,7 @@ namespace mud
         void set_time_scale(double scale);
 
         /** @brief 返回当前时间流速倍率。 */
-        double time_scale() const;
+        [[nodiscard]] double time_scale() const;
 
         /** @brief 注册时间事件监听器。 */
         void subscribe(Listener listener);
