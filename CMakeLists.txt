@@ -21,11 +21,15 @@ set(CONTROLLER_SOURCES
         src/controller/Player/src/Player.cpp
         src/controller/Player/src/Move.cpp
         src/controller/Player/include/Move.h
+        src/controller/Game/src/Game.cpp
+        src/controller/Game/include/Game.h
 )
 
 set(VIEW_SOURCES
         src/view/src/StatusView.cpp
         src/controller/Player/include/Move.h
+        src/model/Time/include/Time.h
+        src/model/Time/src/Time.cpp
 )
 
 set(TOOL_SOURCES
