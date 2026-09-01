@@ -11,6 +11,34 @@
 class Player {
 public:
     Player();
+    Player(PositionCode pos, StateCode state, int satiety, int maxSatiety,
+           int farmingExp, int fishExp, int mineExp);
+
+    // Position
+    [[nodiscard]] PositionCode GetPosition() const;
+    void SetPosition(PositionCode pos);
+
+    // State
+    [[nodiscard]] StateCode GetState() const;
+    void SetState(StateCode state);
+
+    // Satiety
+    [[nodiscard]] int GetSatiety() const;
+    [[nodiscard]] int GetMaxSatiety() const;
+    void SetSatiety(int value);
+    void SetMaxSatiety(int value);
+
+    // Experience
+    [[nodiscard]] int GetFarmingExp() const;
+    [[nodiscard]] int GetFishExp() const;
+    [[nodiscard]] int GetMineExp() const;
+    void SetFarmingExp(int value);
+    void SetFishExp(int value);
+    void SetMineExp(int value);
+
+    // Bag
+    Bag& GetBag();
+    [[nodiscard]] const Bag& GetBag() const;
 
 private:
     Position position;

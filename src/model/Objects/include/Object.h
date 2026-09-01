@@ -12,13 +12,12 @@ public:
     Object(std::string name, std::string description, int health, int sellingPrice, int buyingPrice);
 
     [[nodiscard]] std::string GetName() const;
-
     [[nodiscard]] std::string GetDescription() const;
-
     [[nodiscard]] int GetHealth() const;
+    [[nodiscard]] int GetSellingPrice() const;
+    [[nodiscard]] int GetBuyingPrice() const;
 
     void Broke();
-
     void Repair(int num);
 
     virtual ~Object();

@@ -29,4 +29,8 @@ add_executable(MudGame main.cpp
         src/model/Bag/include/Bag.h
         src/model/Bag/include/Bag.h
         src/model/Map/include/Position.h
+        src/view/src/StatusView.cpp
+        src/view/include/StatusView.h
+        src/tool/src/PlayerSerializer.cpp
+        src/tool/include/PlayerSerializer.h
 )

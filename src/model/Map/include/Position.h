@@ -14,13 +14,11 @@ public:
     explicit Position(PositionCode pos);
 
     [[nodiscard]] PositionCode GetCode() const;
+    void SetCode(PositionCode code);
 
     virtual Position *GoUp();
-
     virtual Position *GoDown();
-
     virtual Position *GoLeft();
-
     virtual Position *GoRight();
 
 private:

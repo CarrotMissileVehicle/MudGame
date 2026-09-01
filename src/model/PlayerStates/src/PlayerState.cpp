@@ -7,6 +7,9 @@
 PlayerState::PlayerState(int code) : stateCode(Waiting) {
 }
 
+PlayerState::PlayerState(StateCode code) : stateCode(code) {
+}
+
 const std::vector<StateCode> *PlayerState::GetAbleStatesByPos(PositionCode pos) const {
     return &ableState.at(pos);
 }

@@ -26,6 +26,14 @@ int Object::GetHealth() const {
     return health;
 }
 
+int Object::GetSellingPrice() const {
+    return sellingPrice;
+}
+
+int Object::GetBuyingPrice() const {
+    return buyingPrice;
+}
+
 void Object::Broke() {
     health -= BrokenStep;
     if (health < 0) health = 0;

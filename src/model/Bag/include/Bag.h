@@ -10,8 +10,14 @@
 
 class Bag {
 public:
-    [[nodiscard]] const std::vector<std::string> GetAllObjectName() const;
+    Bag() = default;
+    ~Bag();
 
+    void AddObject(Object* obj);
+    void RemoveObject(const std::string& name);
+    [[nodiscard]] bool HasObject(const std::string& name) const;
+    [[nodiscard]] size_t GetSize() const;
+    [[nodiscard]] const std::vector<std::string> GetAllObjectName() const;
     [[nodiscard]] const std::vector<std::string> GetDescription() const;
 
     template<typename T>
@@ -34,6 +40,8 @@ public:
         }
         return temp;
     }
+
+    const std::vector<Object*>& GetObjects() const { return objects; }
 
 private:
     std::vector<Object *> objects;

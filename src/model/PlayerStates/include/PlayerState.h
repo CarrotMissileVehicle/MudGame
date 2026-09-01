@@ -14,6 +14,7 @@ public:
     virtual ~PlayerState() = default;
 
     explicit PlayerState(int code);
+    explicit PlayerState(StateCode code);
 
     [[nodiscard]] const std::vector<StateCode> *GetAbleStatesByPos(PositionCode pos) const;
 

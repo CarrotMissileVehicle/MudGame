@@ -12,6 +12,10 @@ PositionCode Position::GetCode() const {
     return pos;
 }
 
+void Position::SetCode(PositionCode code) {
+    this->pos = code;
+}
+
 Position *Position::GoUp() {
     return nullptr;
 }
