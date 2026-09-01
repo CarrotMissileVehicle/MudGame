@@ -1,42 +1,65 @@
 #include "input_parser.h"
 
-#include <CLI/CLI.hpp>
+#include <string>
+#include <vector>
 
-#include <sstream>
-#include <string_view>
+InputParser::InputParser()
+{
+    auto* start = app_.add_subcommand("mine.start", "开始采矿");
+    start->add_option("--layer", layer_, "目标层(0-4)")->required();
 
-/* =====================================================
- * InputParser：命令行文本解析器实现（桩代码）
- *
- * 职责：把一行原始输入解析为结构化的 mud::cmd::Command。
- *   Command.verb    —— 首词（命令动词）
- *   Command.args    —— 位置参数（动词之后的非命名词）
- *   Command.options —— 命名参数 / 选项（--key 或 -k value 形式）
- *   Command.raw     —— 原始输入整行
- * ===================================================== */
+    app_.add_subcommand("mine.stop", "停止采矿");
+    app_.add_subcommand("mine.status", "查询采矿状态");
 
-// 解析一行输入为 Command
-//
-// 解析策略（待实现）：
-//   1. 以空白字符切分输入行；
-//   2. 第一个 token 填入 verb；
-//   3. 形如 --name / -name 且后跟值的 token 解析进 options；
-//   4. 其余 token 依次追加到 args。
-//   5. 若存在不成对的选项（缺值）、括号不匹配等，视为解析失败并抛出 ParseError。
-mud::cmd::Command InputParser::parse(const std::string& line) const
+    app_.add_subcommand("time.now", "查询当前时间");
+    auto* scale = app_.add_subcommand("time.scale", "设置时间倍率");
+    scale->add_option("--factor", factor_, "时间倍率")->required();
+
+    app_.add_subcommand("help", "显示帮助");
+    app_.add_subcommand("quit", "退出游戏");
+    app_.add_subcommand("save", "保存游戏");
+}
+
+mud::cmd::Command InputParser::parse(const std::string& line)
 {
     mud::cmd::Command cmd;
-    cmd.raw = line;  // 原始行原样保存
+    cmd.raw = line;
+    if (line.empty()) return cmd; // 空输入 → verb 为空
 
-    // TODO: 实现分词与选项/位置参数解析逻辑
-    //   std::istringstream iss(line);
-    //   std::string token;
-    //   bool first = true;
-    //   while (iss >> token) {
-    //       if (first) { cmd.verb = token; first = false; }
-    //       else if (token.size() >= 2 && token[0] == '-') { ...options... }
-    //       else { cmd.args.push_back(token); }
-    //   }
+    app_.clear(); // 关键：每轮归零解析状态
+    try
+    {
+        // 字符串入口（本代 CLI11 的 parse(vector) 有缺陷：不消费选项值），第二参 false=不含程序名
+        app_.parse(line, false);
+    }
+    catch (const CLI::ParseError& e)
+    {
+        if (e.get_name() == "CallForHelp")
+        {
+            cmd.verb = "help"; // --help 触发：不在此打印，交由 main 统一打印 help_text()
+            return cmd;
+        }
+        (void)app_.exit(e); // 打印参数错误到 stdout，绝不退出进程
+        cmd.verb = "error";
+        return cmd;
+    }
 
+    // 扁平设计：根上已解析的子命令（至多一个）
+    const auto subs = app_.get_subcommands(); // parsed_subcommands_
+    if (!subs.empty())
+    {
+        CLI::App* leaf = subs.front();
+        cmd.verb = leaf->get_name();
+        for (const auto* opt : leaf->get_options())
+        {
+            if (opt->count() == 0) continue;
+            std::string name = opt->get_name();
+            while (name.size() > 1 && name[0] == '-') name = name.substr(1);
+            cmd.options[name] = opt->as<std::string>();
+        }
+        cmd.args = leaf->remaining();
+    }
     return cmd;
 }
+
+std::string InputParser::help_text() const { return app_.help(); }
