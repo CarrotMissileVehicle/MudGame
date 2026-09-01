@@ -6,6 +6,7 @@
 #define MUDGAME_GAME_H
 
 #include <chrono>
+#include "model/Time/include/Time.h"
 
 class Game {
 public:
@@ -14,9 +15,9 @@ public:
     void startSession();
     void endSession();
 
-    [[nodiscard]] std::chrono::system_clock::time_point getSaveOpenTime() const;
-    [[nodiscard]] std::chrono::system_clock::time_point getSessionStartTime() const;
-    [[nodiscard]] std::chrono::seconds getTotalPlayTime() const;
+    [[nodiscard]] Time getSaveOpenTime() const;
+    [[nodiscard]] Time getSessionStartTime() const;
+    [[nodiscard]] Time getTotalPlayTime() const;
 
     // 持久化支持：从存档恢复保存开启时间与总游玩时长
     void setSaveOpenTime(std::chrono::system_clock::time_point time);

@@ -23,10 +23,15 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
     file << "fishExp=" << player.GetFishExp() << "\n";
     file << "mineExp=" << player.GetMineExp() << "\n";
 
-    auto saveOpenEpoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-            game.getSaveOpenTime().time_since_epoch()).count();
-    file << "saveOpenTime=" << saveOpenEpoch << "\n";
-    file << "totalPlayTime=" << game.getTotalPlayTime().count() << "\n";
+    Time saveOpen = game.getSaveOpenTime();
+    file << "saveOpenDay=" << saveOpen.day << "\n";
+    file << "saveOpenHour=" << saveOpen.hour << "\n";
+    file << "saveOpenMinute=" << saveOpen.minute << "\n";
+
+    Time totalPlay = game.getTotalPlayTime();
+    file << "totalPlayDay=" << totalPlay.day << "\n";
+    file << "totalPlayHour=" << totalPlay.hour << "\n";
+    file << "totalPlayMinute=" << totalPlay.minute << "\n";
 
     const auto& bag = player.GetBag();
     auto itemNames = bag.GetAllObjectName();
@@ -63,8 +68,8 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     int satiety = 100, maxSatiety = 100;
     int farmingExp = 0, fishExp = 0, mineExp = 0;
 
-    long long saveOpenEpoch = 0;
-    long long totalPlaySeconds = 0;
+    long long saveOpenDay = 0, saveOpenHour = 0, saveOpenMinute = 0;
+    long long totalPlayDay = 0, totalPlayHour = 0, totalPlayMinute = 0;
 
     std::string line;
     int bagCount = 0;
@@ -90,10 +95,18 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
                 fishExp = std::stoi(value);
             } else if (key == "mineExp") {
                 mineExp = std::stoi(value);
-            } else if (key == "saveOpenTime") {
-                saveOpenEpoch = std::stoll(value);
-            } else if (key == "totalPlayTime") {
-                totalPlaySeconds = std::stoll(value);
+            } else if (key == "saveOpenDay") {
+                saveOpenDay = std::stoll(value);
+            } else if (key == "saveOpenHour") {
+                saveOpenHour = std::stoll(value);
+            } else if (key == "saveOpenMinute") {
+                saveOpenMinute = std::stoll(value);
+            } else if (key == "totalPlayDay") {
+                totalPlayDay = std::stoll(value);
+            } else if (key == "totalPlayHour") {
+                totalPlayHour = std::stoll(value);
+            } else if (key == "totalPlayMinute") {
+                totalPlayMinute = std::stoll(value);
             } else if (key == "bagCount") {
                 bagCount = std::stoi(value);
             } else if (key == "item") {
@@ -104,11 +117,14 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
 
     player = Player(pos, state, satiety, maxSatiety, farmingExp, fishExp, mineExp);
 
-    if (saveOpenEpoch > 0) {
-        game.setSaveOpenTime(std::chrono::system_clock::time_point(
-                std::chrono::milliseconds(saveOpenEpoch)));
+    using namespace std::chrono;
+    long long saveOpenSeconds = saveOpenDay * 86400 + saveOpenHour * 3600 + saveOpenMinute * 60;
+    long long totalPlaySeconds = totalPlayDay * 86400 + totalPlayHour * 3600 + totalPlayMinute * 60;
+
+    if (saveOpenSeconds > 0) {
+        game.setSaveOpenTime(system_clock::time_point(seconds(saveOpenSeconds)));
     }
-    game.setTotalPlayTime(std::chrono::seconds(totalPlaySeconds));
+    game.setTotalPlayTime(seconds(totalPlaySeconds));
 
     for (const auto& itemLine : itemLines) {
         std::istringstream itemIss(itemLine);

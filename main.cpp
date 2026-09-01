@@ -29,11 +29,18 @@ int main() {
     // 游戏开始时自动记录会话开启时间
     game.startSession();
 
-    std::cout << "存档开启时间(时间戳): "
-              << std::chrono::system_clock::to_time_t(game.getSaveOpenTime()) << std::endl;
+    std::cout << "存档开启时间: "
+              << game.getSaveOpenTime().day << "天 "
+              << game.getSaveOpenTime().hour << "时 "
+              << game.getSaveOpenTime().minute << "分" << std::endl;
     std::cout << "会话开启时间: "
-              << std::chrono::system_clock::to_time_t(game.getSessionStartTime()) << std::endl;
-    std::cout << "游戏总时长(秒): " << game.getTotalPlayTime().count() << std::endl;
+              << game.getSessionStartTime().day << "天 "
+              << game.getSessionStartTime().hour << "时 "
+              << game.getSessionStartTime().minute << "分" << std::endl;
+    std::cout << "游戏总时长: "
+              << game.getTotalPlayTime().day << "天 "
+              << game.getTotalPlayTime().hour << "时 "
+              << game.getTotalPlayTime().minute << "分" << std::endl;
 
     // 模拟游玩
     std::cout << "正在游玩... (输入任意字符后回车退出)" << std::endl;
@@ -43,8 +50,10 @@ int main() {
     // 游戏退出时自动记录游玩时长，并持久化存档
     game.endSession();
     if (serializer.Save(SAVE_FILE, player, game)) {
-        std::cout << "存档成功，本次新累计游戏时长(秒): "
-                  << game.getTotalPlayTime().count() << std::endl;
+        std::cout << "存档成功，本次新累计游戏时长: "
+                  << game.getTotalPlayTime().day << "天 "
+                  << game.getTotalPlayTime().hour << "时 "
+                  << game.getTotalPlayTime().minute << "分" << std::endl;
     }
 
     return 0;
