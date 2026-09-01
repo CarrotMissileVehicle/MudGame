@@ -4,29 +4,29 @@ project(MudGame)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(MudGame main.cpp
-        src/Controller/Objects/src/Object.cpp
-        src/Controller/Objects/include/Object.h
-        src/Controller/PlayerStates/src/PlayerState.cpp
-        src/Controller/PlayerStates/include/PlayerState.h
-        src/Controller/PlayerStates/include/PlayerStateCode.h
-        src/Controller/Map/src/Position.cpp
-        src/Controller/Map/include/Position.h
-        src/Controller/Map/src/Town.cpp
-        src/Controller/Map/include/Town.h
-        src/Controller/Map/src/Home.cpp
-        src/Controller/Map/include/Home.h
-        src/Controller/Map/src/Mine.cpp
-        src/Controller/Map/include/Mine.h
-        src/Controller/Map/src/Farmland.cpp
-        src/Controller/Map/include/Farmland.h
-        src/Controller/Map/src/Coast.cpp
-        src/Controller/Map/include/Coast.h
-        src/Controller/Map/include/PositionCode.h
+        src/model/Objects/src/Object.cpp
+        src/model/Objects/include/Object.h
+        src/model/PlayerStates/src/PlayerState.cpp
+        src/model/PlayerStates/include/PlayerState.h
+        src/model/PlayerStates/include/PlayerStateCode.h
+        src/model/Map/src/Position.cpp
+        src/model/Map/include/Position.h
+        src/model/Map/src/Town.cpp
+        src/model/Map/include/Town.h
+        src/model/Map/src/Home.cpp
+        src/model/Map/include/Home.h
+        src/model/Map/src/Mine.cpp
+        src/model/Map/include/Mine.h
+        src/model/Map/src/Farmland.cpp
+        src/model/Map/include/Farmland.h
+        src/model/Map/src/Coast.cpp
+        src/model/Map/include/Coast.h
+        src/model/Map/include/PositionCode.h
         src/Controller/Player/Player.cpp
         src/Controller/Player/Player.h
-        src/Controller/Bag/src/Bag.cpp
-        src/Controller/Bag/include/Bag.h
-        src/Controller/Bag/include/Bag.h
-        src/Controller/Bag/include/Bag.h
-        src/Controller/Map/include/Position.h
+        src/model/Bag/src/Bag.cpp
+        src/model/Bag/include/Bag.h
+        src/model/Bag/include/Bag.h
+        src/model/Bag/include/Bag.h
+        src/model/Map/include/Position.h
 )

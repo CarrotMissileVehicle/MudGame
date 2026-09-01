@@ -6,7 +6,7 @@
 #define MUDGAME_BAG_H
 #include <string>
 #include <vector>
-#include "../../Objects/include/Object.h"
+#include "../../../model/Objects/include/Object.h"
 
 class Bag {
 public:

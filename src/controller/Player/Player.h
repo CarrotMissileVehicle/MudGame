@@ -4,9 +4,9 @@
 
 #ifndef MUDGAME_PLAYER_H
 #define MUDGAME_PLAYER_H
-#include "../Bag/include/Bag.h"
-#include "../Map/include/Position.h"
-#include "../PlayerStates/include/PlayerState.h"
+#include "../../model/Bag/include/Bag.h"
+#include "../../model/Map/include/Position.h"
+#include "../../model/PlayerStates/include/PlayerState.h"
 
 class Player {
 public:
