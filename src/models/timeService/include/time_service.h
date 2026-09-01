@@ -13,6 +13,7 @@
 #include "time_event.h"
 
 #include <functional>
+#include <utility>
 #include <vector>
 
 namespace mud
@@ -54,12 +55,23 @@ namespace mud
         /** @brief 返回当前时间流速倍率。 */
         [[nodiscard]] double time_scale() const;
 
-        /** @brief 注册时间事件监听器。 */
-        void subscribe(Listener listener);
+        /** @brief 注册时间事件监听器，返回用于退订的令牌。 */
+        std::size_t subscribe(Listener listener);
+
+        /** @brief 退订指定令牌对应的时间事件监听器。 */
+        void unsubscribe(std::size_t token);
 
     private:
-        double time_scale_{1.0};          // 时间流速倍率（默认 1.0）
-        std::vector<Listener> listeners_; // 时间事件订阅者
+        // 订阅者条目：退订令牌 + 回调
+        struct Entry
+        {
+            std::size_t token;
+            Listener callback;
+        };
+
+        double time_scale_{1.0};       // 时间流速倍率（默认 1.0）
+        std::vector<Entry> listeners_; // 时间事件订阅者
+        std::size_t next_token_{1};    // 下一个分配的订阅令牌
 
         // 本次会话已按倍率折算的推进时长
         [[nodiscard]] time::gameDuration live_elapsed_scaled() const;

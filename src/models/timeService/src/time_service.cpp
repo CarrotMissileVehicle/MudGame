@@ -83,16 +83,17 @@ void mud::TimeService::tick(mud::time::gameDuration /*real_delta*/)
 
     const auto notify = [this](time::TimeEvent ev)
     {
-        for (const auto& listener : listeners_) listener(ev);
+        for (const auto& entry : listeners_) entry.callback(ev);
     };
-    if (after.year != before.year) notify(time::TimeEvent::YearChanged);
-    if (after.month != before.month) notify(time::TimeEvent::MonthChanged);
-    if (after.day != before.day) notify(time::TimeEvent::DayChanged);
-    if (after.hour != before.hour) notify(time::TimeEvent::HourChanged);
+    // 按 分→时→日→月→年 升序派发，跨多粒度时各监听器逐级收到通知。
     if (after.minute != before.minute) notify(time::TimeEvent::MinuteChanged);
+    if (after.hour != before.hour) notify(time::TimeEvent::HourChanged);
+    if (after.day != before.day) notify(time::TimeEvent::DayChanged);
+    if (after.month != before.month) notify(time::TimeEvent::MonthChanged);
+    if (after.year != before.year) notify(time::TimeEvent::YearChanged);
 }
 
-// 直接设置当前游戏时间：反解累计总长使 now() 恰好等于 time；钳制不为负
+// 直接设置当前游戏时间：反解累计总长使 now() 恰好等于 time；
 void mud::TimeService::set_time(mud::time::gameTimePoint time)
 {
     total_runtime_ = std::chrono::duration_cast<mud::time::gameDuration>(time - startTime_)
@@ -114,8 +115,18 @@ double mud::TimeService::time_scale() const
     return time_scale_;
 }
 
-// 注册时间事件监听器
-void mud::TimeService::subscribe(Listener listener)
+// 注册时间事件监听器，返回退订令牌
+std::size_t mud::TimeService::subscribe(Listener listener)
 {
-    listeners_.push_back(listener);
+    const auto token = next_token_++;
+    listeners_.push_back(Entry{token, std::move(listener)});
+    return token;
+}
+
+// 退订指定令牌对应的时间事件监听器
+void mud::TimeService::unsubscribe(std::size_t token)
+{
+    listeners_.erase(std::remove_if(listeners_.begin(), listeners_.end(),
+                                    [token](const Entry& e) { return e.token == token; }),
+                     listeners_.end());
 }
