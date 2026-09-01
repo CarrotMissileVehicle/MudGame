@@ -1,3 +1,9 @@
+/**
+ * @file time_service.cpp
+ * @brief 游戏时间服务实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "time_service.h"
 
 // 构造：初始化当前游戏时间
@@ -7,19 +13,19 @@ mud::TimeService::TimeService()
 }
 
 // 返回当前游戏时间点
-mud::gameTimePoint mud::TimeService::now() const
+mud::time::gameTimePoint mud::TimeService::now() const
 {
     // TODO: 实现
 }
 
 // 按真实经过时长推进游戏时间（受时间倍率影响）
-void mud::TimeService::tick(mud::gameDuration real_delta)
+void mud::TimeService::tick(mud::time::gameDuration real_delta)
 {
     // TODO: 实现
 }
 
 // 直接设置当前游戏时间
-void mud::TimeService::set_time(mud::gameTimePoint time)
+void mud::TimeService::set_time(mud::time::gameTimePoint time)
 {
     // TODO: 实现
 }
