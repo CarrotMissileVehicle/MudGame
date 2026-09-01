@@ -4,6 +4,7 @@
  */
 #include "time_service.h"
 
+#include <algorithm>
 #include <chrono>
 
 namespace
@@ -56,7 +57,7 @@ mud::time::gameDuration mud::TimeService::session_total() const
     return total_runtime_ + live_elapsed_scaled();
 }
 
-// 本次会话已按倍率折算的推进时长
+// 按倍率折算的推进时长
 mud::time::gameDuration mud::TimeService::live_elapsed_scaled() const
 {
     auto real_elapsed = std::chrono::steady_clock::now() - session_start_;
@@ -65,7 +66,7 @@ mud::time::gameDuration mud::TimeService::live_elapsed_scaled() const
         static_cast<mud::time::gameDuration::rep>(real_ms.count() * time_scale_)};
 }
 
-// 按帧驱动：比对相邻两帧游戏日历，向订阅者派发过界时间事件
+// 比对相邻两帧游戏日历，向订阅者派发过界时间事件
 void mud::TimeService::tick(mud::time::gameDuration /*real_delta*/)
 {
     const auto cur = now();
@@ -91,11 +92,13 @@ void mud::TimeService::tick(mud::time::gameDuration /*real_delta*/)
     if (after.minute != before.minute) notify(time::TimeEvent::MinuteChanged);
 }
 
-// 直接设置当前游戏时间：反解累计总长使 now() 恰好等于 time
+// 直接设置当前游戏时间：反解累计总长使 now() 恰好等于 time；钳制不为负
 void mud::TimeService::set_time(mud::time::gameTimePoint time)
 {
     total_runtime_ = std::chrono::duration_cast<mud::time::gameDuration>(time - startTime_)
                      - live_elapsed_scaled();
+    // 游戏时间不得早于世界创始时刻，钳制下限为 0。
+    total_runtime_ = std::max(total_runtime_, mud::time::gameDuration{0});
     last_tick_time_ = now();
 }
 
