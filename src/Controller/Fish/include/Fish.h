@@ -1,12 +1,13 @@
 #ifndef MUDGAME_FISH_H
 #define MUDGAME_FISH_H
 
-#include "Object.h"
+#include "Food.h"
 
-class Fish: public Object
+class Fish: public Food
 {
 public:
-    Fish(float probability, int fishExp, int sellingPrice, int buyingPrice);
+    Fish(float probability, int fishExp, int satiationRecovery,
+         int sellingPrice, int buyingPrice);
 
     ~Fish() override;
 

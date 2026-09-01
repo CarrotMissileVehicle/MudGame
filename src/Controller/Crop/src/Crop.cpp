@@ -1,8 +1,8 @@
 #include "../include/Crop.h"
 
 Crop::Crop(int growthCycle, int yield, int farmExp, int unlockLevel,
-           int sellingPrice, int buyingPrice)
-        : Object(sellingPrice, buyingPrice),
+           int satiationRecovery, int sellingPrice, int buyingPrice)
+        : Food(satiationRecovery, sellingPrice, buyingPrice),
           growthCycle(growthCycle),
           yield(yield),
           farmExp(farmExp),

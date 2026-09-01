@@ -2,13 +2,13 @@
 #define MUDGAME_CROP_H
 
 
-#include "Object.h"
+#include "Food.h"
 
-class Crop: public Object
+class Crop: public Food
 {
 public:
     Crop(int growthCycle, int yield, int farmExp, int unlockLevel,
-         int sellingPrice, int buyingPrice);
+         int satiationRecovery, int sellingPrice, int buyingPrice);
 
     ~Crop() override;
 

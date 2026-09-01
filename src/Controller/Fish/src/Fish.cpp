@@ -1,7 +1,8 @@
 #include "../include/Fish.h"
 
-Fish::Fish(float probability, int fishExp, int sellingPrice, int buyingPrice)
-        : Object(sellingPrice, buyingPrice),
+Fish::Fish(float probability, int fishExp, int satiationRecovery,
+           int sellingPrice, int buyingPrice)
+        : Food(satiationRecovery, sellingPrice, buyingPrice),
           probability(probability),
           fishExp(fishExp) {}
 
