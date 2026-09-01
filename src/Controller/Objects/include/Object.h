@@ -8,9 +8,12 @@
 
 class Object {
 public:
-    Object();
+    Object(int sellingPrice = 0, int buyingPrice = 0);
 
     virtual ~Object();
+
+    int getSellingPrice() const;
+    int getBuyingPrice() const;
 
 protected:
     int sellingPrice;

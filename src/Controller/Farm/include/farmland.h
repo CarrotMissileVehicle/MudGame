@@ -6,20 +6,27 @@
 
 class FarmLand
 {
-private:
-    bool isOccupied = false;        //是否占用
-    bool isWatered = false;         //是否浇水
-
-    Crop *crop;                     //所种作物
-
-    void sow();
-    void water();
-    void fertilize();
-    void harvest();
-
 public:
-    FarmLand();
+    explicit FarmLand(Crop* crop = nullptr);
+
     ~FarmLand();
+
+    bool isOccupied() const;
+    bool isWatered() const;
+    Crop* getCrop() const;
+    int getGrowthStage() const;
+
+    bool sow(Crop* seed);
+    bool water();
+    void fertilize(int speedUp);
+    int harvest();
+    void tickGrow(bool growFullSpeed);
+
+private:
+    bool occupied = false;          //是否占用
+    bool watered = false;           //是否浇水
+    Crop *crop = nullptr;           //所种作物
+    int growthStage = 0;            //当前生长阶段
 };
 
 

@@ -3,18 +3,23 @@
 
 
 #include <vector>
-#include "farmland.h"
+#include "FarmLand.h"
 
 class Farm
 {
 public:
-    Farm();
+    explicit Farm(const std::vector<FarmLand>& farmlands);
+
     ~Farm();
+
+    size_t size() const;
+    FarmLand& getFarmland(size_t index);
+    const FarmLand& getFarmland(size_t index) const;
+    void add(const FarmLand& farmland);
+    void tickAll(bool growFullSpeed);
 
 private:
     std::vector<FarmLand> farmlands;
-
-    void add();
 };
 
 

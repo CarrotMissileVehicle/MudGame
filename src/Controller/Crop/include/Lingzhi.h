@@ -9,11 +9,11 @@ class Lingzhi: public Crop
 {
 public:
     Lingzhi();
-    ~Lingzhi();
 
-private:
-    void grow();
-    void harvest();
+    ~Lingzhi() override;
+
+    void grow() override;
+    void harvest() override;
 };
 
 

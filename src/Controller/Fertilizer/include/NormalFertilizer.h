@@ -4,12 +4,13 @@
 
 #include "Fertilizer.h"
 
-// 普通肥料
+// 普通肥料：剩余生长周期减半
 class NormalFertilizer: public Fertilizer
 {
-private:
+public:
     NormalFertilizer();
-    ~NormalFertilizer();
+
+    ~NormalFertilizer() override;
 };
 
 

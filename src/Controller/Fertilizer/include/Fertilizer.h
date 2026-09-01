@@ -7,12 +7,15 @@
 class Fertilizer: public Object
 {
 public:
-    int price;
-    int speedUp;
+    int getSpeedUp() const;
+
+protected:
+    Fertilizer(int speedUp, int sellingPrice, int buyingPrice);
+
+    ~Fertilizer() override;
 
 private:
-    Fertilizer();
-    ~Fertilizer();
+    int speedUp;
 };
 
 

@@ -9,11 +9,11 @@ class Pumpkin: public Crop
 {
 public:
     Pumpkin();
-    ~Pumpkin();
 
-private:
-    void grow();
-    void harvest();
+    ~Pumpkin() override;
+
+    void grow() override;
+    void harvest() override;
 };
 
 

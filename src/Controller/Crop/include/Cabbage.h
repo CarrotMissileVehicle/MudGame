@@ -4,15 +4,16 @@
 
 #include "Crop.h"
 
+//小白菜
 class Cabbage: public Crop
 {
 public:
     Cabbage();
-    ~Cabbage();
 
-private:
-    void grow();
-    void harvest();
+    ~Cabbage() override;
+
+    void grow() override;
+    void harvest() override;
 };
 
 
