@@ -1,0 +1,37 @@
+{
+  "ore_iron": {
+    "name": "黯铁矿",
+    "mining_level": 1,
+    "price": 8,
+    "mining_exp": 5,
+    "usage": "工具升级材料"
+  },
+  "ore_silver": {
+    "name": "星纹银",
+    "mining_level": 3,
+    "price": 25,
+    "mining_exp": 12,
+    "usage": "高级工具材料"
+  },
+  "ore_gold": {
+    "name": "赤耀金",
+    "mining_level": 5,
+    "price": 60,
+    "mining_exp": 20,
+    "usage": "贵重品/升级材料"
+  },
+  "ore_crystal": {
+    "name": "雷鸣晶",
+    "mining_level": 8,
+    "price": 150,
+    "mining_exp": 35,
+    "usage": "传说工具材料"
+  },
+  "ore_core": {
+    "name": "世界之核",
+    "mining_level": 15,
+    "price": 500,
+    "mining_exp": 60,
+    "usage": "至宝/收藏"
+  }
+}
