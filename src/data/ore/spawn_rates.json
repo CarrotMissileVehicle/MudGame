@@ -1,0 +1,37 @@
+{
+  "shallow": {
+    "ore_iron": 0.70,
+    "ore_silver": 0.25,
+    "ore_gold": 0.05,
+    "ore_crystal": 0.00,
+    "ore_core": 0.00
+  },
+  "middle": {
+    "ore_iron": 0.40,
+    "ore_silver": 0.40,
+    "ore_gold": 0.15,
+    "ore_crystal": 0.05,
+    "ore_core": 0.00
+  },
+  "deep": {
+    "ore_iron": 0.15,
+    "ore_silver": 0.35,
+    "ore_gold": 0.35,
+    "ore_crystal": 0.13,
+    "ore_core": 0.02
+  },
+  "crystal": {
+    "ore_iron": 0.05,
+    "ore_silver": 0.15,
+    "ore_gold": 0.30,
+    "ore_crystal": 0.40,
+    "ore_core": 0.10
+  },
+  "core": {
+    "ore_iron": 0.00,
+    "ore_silver": 0.05,
+    "ore_gold": 0.15,
+    "ore_crystal": 0.30,
+    "ore_core": 0.50
+  }
+}

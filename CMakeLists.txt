@@ -2,8 +2,20 @@ cmake_minimum_required(VERSION 4.0)
 project(MudGame)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(MudGame main.cpp
+include(FetchContent)
+FetchContent_Declare(cli11
+    GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+    GIT_TAG v2.7.2
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(cli11)
+
+add_subdirectory(src)
+
+# Jerry 模块：种菜 / 钓鱼 / 农场 / 肥料 / 市场等完整实现
+set(JERRY_SOURCES
         src/Controller/Objects/src/Object.cpp
         src/Controller/Food/src/Food.cpp
         src/Controller/Crop/src/Crop.cpp
@@ -30,6 +42,9 @@ add_executable(MudGame main.cpp
         src/Controller/Market/src/ShopItem.cpp
 )
 
+add_executable(MudGame main.cpp ${JERRY_SOURCES})
+target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser cli11)
+
 target_include_directories(MudGame PRIVATE
         src/Controller/Objects/include
         src/Controller/Food/include
@@ -37,5 +52,7 @@ target_include_directories(MudGame PRIVATE
         src/Controller/Fertilizer/include
         src/Controller/Farm/include
         src/Controller/Fish/include
+        src/Controller/Farming/include
+        src/Controller/Fishing/include
         src/Controller/Market/include
 )
