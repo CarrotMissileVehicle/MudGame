@@ -6,6 +6,7 @@
 #define MUDGAME_PLAYERSTATE_H
 #include <map>
 #include <vector>
+#include "../../Map/include/PositionCode.h"
 #include "PlayerStateCode.h"
 
 class PlayerState {

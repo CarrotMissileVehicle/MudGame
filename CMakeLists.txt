@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(MudGame main.cpp
         src/Controller/Objects/src/Object.cpp
         src/Controller/Objects/include/Object.h
-        src/Controller/include/PlayerStateMachine.h
         src/Controller/PlayerStates/src/PlayerState.cpp
         src/Controller/PlayerStates/include/PlayerState.h
         src/Controller/PlayerStates/include/PlayerStateCode.h
@@ -27,4 +26,7 @@ add_executable(MudGame main.cpp
         src/Controller/Player/Player.h
         src/Controller/Bag/src/Bag.cpp
         src/Controller/Bag/include/Bag.h
+        src/Controller/Bag/include/Bag.h
+        src/Controller/Bag/include/Bag.h
+        src/Controller/Map/include/Position.h
 )

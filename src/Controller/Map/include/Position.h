@@ -4,7 +4,7 @@
 
 #ifndef MUDGAME_POSITION_H
 #define MUDGAME_POSITION_H
-#include "../PositionCode.h"
+#include "PositionCode.h"
 
 
 class Position {
