@@ -26,6 +26,12 @@ set(CONTROLLER_SOURCES
         src/controller/Game/src/Game.cpp
         src/controller/Game/include/Game.h
 )
+include(FetchContent)
+FetchContent_Declare(cli11
+    GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+    GIT_TAG v2.7.2
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(cli11)
 
 set(VIEW_SOURCES
         src/view/src/StatusView.cpp
@@ -49,14 +55,5 @@ add_executable(MudGame main.cpp
 )
 add_subdirectory(src)
 
-target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser cmd_game)
-# 测试程序
-add_executable(MudGameTest test/test_player.cpp
-        ${MODEL_SOURCES}
-        ${CONTROLLER_SOURCES}
-        ${TOOL_SOURCES}
-        src/controller/Player/include/Move.h
-)
-
-target_include_directories(MudGame PRIVATE src)
-target_include_directories(MudGameTest PRIVATE src)
+add_executable(MudGame main.cpp)
+target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser)
