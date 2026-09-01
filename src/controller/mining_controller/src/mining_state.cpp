@@ -1,3 +1,9 @@
+/**
+ * @file mining_state.cpp
+ * @brief 采矿会话状态机实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "mining_state.h"
 
 // 是否处于采矿状态

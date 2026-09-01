@@ -1,3 +1,9 @@
+/**
+ * @file ore_layer.cpp
+ * @brief 矿区（层）数据查询实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "ore_layer.h"
 
 // 获取矿区名称

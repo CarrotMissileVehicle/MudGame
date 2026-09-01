@@ -1,3 +1,12 @@
+/**
+ * @file tool_Controller.h
+ * @brief 工具控制器（ToolController）。
+ *
+ * 统一管理多件工具（使用、查询、升级、修复），并在与 金币 / 背包 交互的
+ * 环节协调资源扣减。玩家与背包依赖通过构造函数注入。
+ *
+ * 依赖：tool、tools、player、inventory。
+ */
 #pragma once                  // 防止头文件被重复包含
 
 #include <string>             // 字符串类型

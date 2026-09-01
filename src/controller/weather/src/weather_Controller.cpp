@@ -1,3 +1,9 @@
+/**
+ * @file weather_Controller.cpp
+ * @brief 天气与事件控制器实现。
+ *
+ * 实现主循环心跳的跨天天气生成与早 8 点事件触发，并转发天气/事件查询。
+ */
 #include "weather_Controller.h"   // 实现这个头文件里声明的方法
 #include <vector>                 // 可变长数组类型
 
