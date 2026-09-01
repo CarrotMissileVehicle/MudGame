@@ -1,3 +1,9 @@
+/**
+ * @file ore_data.cpp
+ * @brief 矿石数据表查询实现。
+ *
+ * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ */
 #include "ore_data.h"
 
 // 获取矿石名称
