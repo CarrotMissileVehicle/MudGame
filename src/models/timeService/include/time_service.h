@@ -13,6 +13,7 @@
 #include "time_event.h"
 
 #include <functional>
+#include <vector>
 
 namespace mud
 {
@@ -57,9 +58,11 @@ namespace mud
         void subscribe(Listener listener);
 
     private:
-        double time_scale_{1.0}; // 时间流速倍率（默认 1.0）
+        double time_scale_{1.0};          // 时间流速倍率（默认 1.0）
+        std::vector<Listener> listeners_; // 时间事件订阅者
 
-        // 具体实现暂时隐藏
+        // 本次会话已按倍率折算的推进时长
+        [[nodiscard]] time::gameDuration live_elapsed_scaled() const;
     };
 
 }
