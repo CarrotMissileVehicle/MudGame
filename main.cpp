@@ -3,7 +3,7 @@
  * @brief MUD 游戏命令行入口。
  *
  * 负责装配游戏核心组件（时间服务、采矿会话）、注册命令处理器，
- * 并运行「读取输入 -> 解析命令 -> 派发执行」的主循环。
+ * 并运行「游戏帧循环 + 非阻塞读输入 -> 解析命令 -> 派发执行」的主循环。
  *
  * 依赖：cmdParser(InputParser/Connector)、mining_controller(MiningState)、
  *       timeService(TimeService)。
@@ -16,9 +16,14 @@
 #include "time_service.h"
 
 #include <cerrno>
+#include <chrono>
+#include <condition_variable>
 #include <cstdlib>
 #include <iostream>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <thread>
 
 namespace
 {
@@ -73,8 +78,9 @@ namespace
 /**
  * @brief 程序主入口。
  *
- * 装配核心对象、绑定各类游戏命令，然后进入带提示符的命令循环。
- * 通过 stdin 逐行读取命令，解析并派发到对应处理器；遇到 quit 或 EOF 退出。
+ * 装配核心对象、绑定各类游戏命令，然后进入带提示符的游戏帧循环。
+ * 时间服务由循环每帧按真实经过时长推进（受时间倍率影响）；输入由读取
+ * 线程推入队列，主循环每帧非阻塞排空并派发命令；quit 或 EOF 退出。
  *
  * @return 进程返回值，正常退出为 0。
  */
@@ -142,29 +148,72 @@ int main()
         return HandlerResult::Ok;
     });
 
-    // 主命令循环：解析 stdin 输入并派发至已绑定处理器。
-    // 逐行读取，忽略空行；quit 退出、help 打印帮助、error/空动词则跳过。
-    std::string line;
-    while (true)
+    // 输入读取线程：把 stdin 逐行推入线程安全队列，供帧循环非阻塞排空。
+    std::queue<std::string> input_q;
+    std::mutex q_mtx;
+    std::condition_variable q_cv;
+    bool input_open = true;
+
+    std::thread reader([&]
     {
-        std::cout << "> " << std::flush;
-        if (!std::getline(std::cin, line)) break; // EOF 时结束循环
-        if (line.empty()) continue;
+        std::string line;
+        while (std::getline(std::cin, line))
+        {
+            std::lock_guard<std::mutex> lk(q_mtx);
+            input_q.push(std::move(line));
+        }
+        std::lock_guard<std::mutex> lk(q_mtx);
+        input_open = false;
+        q_cv.notify_one();
+    });
 
-        auto cmd = parser.parse(line);
-        if (cmd.verb == "quit") break;
-        if (cmd.verb == "help") { std::cout << parser.help_text(); continue; }
-        if (cmd.verb.empty() || cmd.verb == "error") continue;
+    // 游戏帧循环：固定 100ms 一拍。每拍按真实经过时长推进游戏时间，
+    // 触发到期回调，并排空输入队列里的命令。
+    constexpr auto frame_dur = std::chrono::milliseconds(100);
+    auto last = std::chrono::steady_clock::now();
+    bool running = true;
 
-        // 为每次派发建立独立的 HandlerContext，绑定时间服务与会话状态。
-        std::cerr << "[TRACE before dispatch verb=" << cmd.verb << "]\n";
-        HandlerContext ctx{time_service, session};
-        std::cerr << "[TRACE ctx built]\n";
-        auto r = connector.dispatch(cmd, ctx);
-        std::cerr << "[TRACE after dispatch]\n";
-        std::cout << "[结果: " << result_text(r) << "]\n";
+    while (running)
+    {
+        const auto frame_now = std::chrono::steady_clock::now();
+        const auto delta = std::chrono::duration_cast<mud::time::gameDuration>(frame_now - last);
+        last = frame_now;
+
+        time_service.update(delta);
+
+        // 排空已就绪的输入
+        for (;;)
+        {
+            std::string line;
+            {
+                std::unique_lock<std::mutex> lk(q_mtx);
+                if (input_q.empty())
+                {
+                    if (!input_open) running = false; // EOF：结束后退出
+                    break;
+                }
+                line = std::move(input_q.front());
+                input_q.pop();
+            }
+            if (line.empty()) continue;
+
+            auto cmd = parser.parse(line);
+            if (cmd.verb == "quit") { running = false; break; }
+            if (cmd.verb == "help") { std::cout << parser.help_text(); continue; }
+            if (cmd.verb.empty() || cmd.verb == "error") continue;
+
+            std::cerr << "[TRACE before dispatch verb=" << cmd.verb << "]\n";
+            HandlerContext ctx{time_service, session};
+            std::cerr << "[TRACE ctx built]\n";
+            auto r = connector.dispatch(cmd, ctx);
+            std::cerr << "[TRACE after dispatch]\n";
+            std::cout << "[结果: " << result_text(r) << "]\n";
+        }
+
+        std::this_thread::sleep_until(last + frame_dur);
     }
 
+    reader.join();
     std::cout << "再见\n";
     return 0;
 }
