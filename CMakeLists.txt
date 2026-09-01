@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(MudGame main.cpp
         src/Controller/Objects/src/Object.cpp
+        src/Controller/Food/src/Food.cpp
         src/Controller/Crop/src/Crop.cpp
         src/Controller/Crop/src/Cabbage.cpp
         src/Controller/Crop/src/Carrot.cpp
@@ -24,12 +25,17 @@ add_executable(MudGame main.cpp
         src/Controller/Fish/src/KingCrab.cpp
         src/Controller/Farming/src/FarmingController.cpp
         src/Controller/Fishing/src/FishingController.cpp
+        src/Controller/Market/src/Market.cpp
+        src/Controller/Market/src/Shop.cpp
+        src/Controller/Market/src/ShopItem.cpp
 )
 
 target_include_directories(MudGame PRIVATE
         src/Controller/Objects/include
+        src/Controller/Food/include
         src/Controller/Crop/include
         src/Controller/Fertilizer/include
         src/Controller/Farm/include
         src/Controller/Fish/include
+        src/Controller/Market/include
 )
