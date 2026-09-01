@@ -56,7 +56,7 @@ mud::time::gameDuration mud::TimeService::session_total() const
     return accumulated_;
 }
 
-// 每帧推进：累加 delta×倍率，并触发落入 (上帧时刻, 当前时刻] 窗口内的到期回调。
+// 每帧推进，累加 delta×倍率，并触发落入 (上帧时刻, 当前时刻] 窗口内的到期回调。
 void mud::TimeService::update(mud::time::gameDuration real_delta)
 {
     const auto before = now();
