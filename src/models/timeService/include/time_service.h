@@ -69,11 +69,11 @@ namespace mud
             Listener callback;
         };
 
-        double time_scale_{1.0};       // 时间流速倍率（默认 1.0）
+        double time_scale_{60.0};       // 时间流速倍率
         std::vector<Entry> listeners_; // 时间事件订阅者
         std::size_t next_token_{1};    // 下一个分配的订阅令牌
 
-        // 本次会话已按倍率折算的推进时长
+        // 本次会话按倍率折算的推进时长
         [[nodiscard]] time::gameDuration live_elapsed_scaled() const;
     };
 

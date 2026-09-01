@@ -11,7 +11,7 @@ namespace
 {
     using mud::time::gameDuration;
 
-    // 游戏世界纪元：0 年 1 月 1 日 00:00:00（专有格里高利历，跨月/闰年与现实一致，无闰秒）。
+    // 游戏世界纪元：0 年 1 月 1 日 00:00:00
     constexpr std::chrono::sys_days kGameEpoch = std::chrono::year{0} / 1 / 1;
 
     // 将累计游戏时长拆分为游戏日历字段，用于判定分/时/天/月/年过界。
@@ -85,7 +85,7 @@ void mud::TimeService::tick(mud::time::gameDuration /*real_delta*/)
     {
         for (const auto& entry : listeners_) entry.callback(ev);
     };
-    // 按 分→时→日→月→年 升序派发，跨多粒度时各监听器逐级收到通知。
+    // 按 分→时→日→月→年 升序派发，各监听器逐级收到通知。
     if (after.minute != before.minute) notify(time::TimeEvent::MinuteChanged);
     if (after.hour != before.hour) notify(time::TimeEvent::HourChanged);
     if (after.day != before.day) notify(time::TimeEvent::DayChanged);
@@ -98,7 +98,7 @@ void mud::TimeService::set_time(mud::time::gameTimePoint time)
 {
     total_runtime_ = std::chrono::duration_cast<mud::time::gameDuration>(time - startTime_)
                      - live_elapsed_scaled();
-    // 游戏时间不得早于世界创始时刻，钳制下限为 0。
+    // 游戏时间不得早于世界创始时刻，下限为 0。
     total_runtime_ = std::max(total_runtime_, mud::time::gameDuration{0});
     last_tick_time_ = now();
 }

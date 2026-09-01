@@ -5,7 +5,6 @@
 #   1. 声明 C++23 标准与构建要求
 #   2. 通过 FetchContent 拉取头文件库 CLI11（用于命令行解析）
 #   3. 引入 src 子目录并构建可执行目标 MudGame
-#
 # =====================================================================
 cmake_minimum_required(VERSION 4.0)
 project(MudGame)
