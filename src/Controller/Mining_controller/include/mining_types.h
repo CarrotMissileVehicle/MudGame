@@ -45,7 +45,7 @@ namespace mud::mining
     /** @brief 采矿工具配置（待工具系统完善）。 */
     struct MiningTool // 等工具部分完善
     {
-        MiningSpeed mining_speed;   // 工具速度档位
+        MiningSpeed mining_speed = MiningSpeed::Core; // 工具速度档位（默认核心镐）
         time::gameMinutes interval{static_cast<std::int64_t>(mining_speed)}; // 单次采矿间隔（游戏分钟）
         double rare_bonus = 0.0;    // 稀有矿产加成
     };

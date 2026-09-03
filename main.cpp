@@ -2,17 +2,19 @@
  * @file main.cpp
  * @brief MUD 游戏命令行入口。
  *
- * 负责装配游戏核心组件（时间服务、采矿会话）、注册命令处理器，
+ * 负责装配游戏核心组件（时间服务、采矿控制器与命令处理器）、注册命令处理器，
  * 并运行「游戏帧循环（1 现实秒 1 帧）+ 非阻塞读输入 -> 解析命令 -> 派发执行」的主循环。
  *
- * 依赖：cmdParser(InputParser/Connector)、mining_controller(MiningState)、
- *       timeService(TimeService)。
+ * 依赖：cmdParser(InputParser/Connector)、mining_controller(MiningController/
+ *       MiningHandler)、timeService(TimeService)。
  */
 
 #include "connector.h"
 #include "input_parser.h"
-#include "mining_state.h"
+#include "mining_controller.h"
+#include "mining_handler.h"
 #include "mining_types.h"
+#include "ore_data.h"
 #include "time_service.h"
 
 #include <cerrno>
@@ -87,8 +89,18 @@ namespace
            << std::setw(2) << std::setfill('0') << t.month << '-'
            << std::setw(2) << std::setfill('0') << t.day << ' '
            << std::setw(2) << std::setfill('0') << t.hour << ':'
-           << std::setw(2) << std::setfill('0') << t.minute;
+          << std::setw(2) << std::setfill('0') << t.minute;
         return os.str();
+    }
+
+    /**
+     * @brief 打印单条采矿产出。
+     * @param r 采矿产出结果。
+     */
+    void print_result(const mud::mining::MiningResult& r)
+    {
+        std::cout << "获得矿石 " << r.ore_id << " x" << r.quantity
+                  << "（经验 +" << r.experience << "）\n";
     }
 } // namespace
 
@@ -104,7 +116,9 @@ namespace
 int main()
 {
     mud::TimeService time_service;
-    ::MiningState session;
+    Ore::OreData ore_data; // 矿石数据源占位（兼容预留；控制器内部另持 JSON 查询表）
+    MiningController mining_controller(ore_data, time_service);
+    MiningHandler mining_handler(mining_controller);
     mud::mining::MiningContext mctx;
 
     InputParser parser;
@@ -117,15 +131,19 @@ int main()
         auto it = c.options.find("layer");
         if (it == c.options.end() || !to_size(it->second, layer)) return HandlerResult::BadArgument;
         mctx = mud::mining::MiningContext{}; // 重置上下文，保证每次开始均为全新采矿会话。
-        ctx.session.start(layer, ctx.time.now());
+        if (!ctx.mining.start(layer, mctx))
+        {
+            std::cout << "无法开始采矿：采矿中、层不可达或照明不足\n";
+            return HandlerResult::Failed;
+        }
         std::cout << "开始采矿：层 " << layer << "\n";
         return HandlerResult::Ok;
     });
 
-    // 停止当前采矿会话，无参数。
-    connector.bind("mine.stop", [](const mud::cmd::Command&, const HandlerContext& ctx)
+    // 停止当前采矿会话并结算未提取产出，无参数。
+    connector.bind("mine.stop", [&mctx](const mud::cmd::Command&, const HandlerContext& ctx)
     {
-        ctx.session.stop();
+        for (const auto& r : ctx.mining.stop(mctx)) print_result(r);
         std::cout << "已停止采矿\n";
         return HandlerResult::Ok;
     });
@@ -133,14 +151,14 @@ int main()
     // 查询采矿状态：未采矿时给出提示；采矿中则输出当前层与开始时间。
     connector.bind("mine.status", [](const mud::cmd::Command&, const HandlerContext& ctx)
     {
-        if (!ctx.session.is_mining())
+        if (!ctx.mining.is_mining())
         {
             std::cout << "当前未在采矿\n";
             return HandlerResult::Ok;
         }
-        const auto& layer = ctx.session.layer_id();
+        const auto& layer = ctx.mining.layer_id();
         std::cout << "采矿中：层 " << (layer ? std::to_string(*layer) : "?")
-            << "，开始时间=" << format_time(ctx.session.start_time()) << "\n";
+            << "，开始时间=" << format_time(ctx.mining.start_time()) << "\n";
         return HandlerResult::Ok;
     });
 
@@ -194,6 +212,10 @@ int main()
 
         time_service.update();
 
+        // 采矿进度联动：依据时间服务当前时刻结算到期产出。
+        for (const auto& r : mining_handler.poll(mctx))
+            print_result(r);
+
         // 排空已就绪的输入
         for (;;)
         {
@@ -215,7 +237,7 @@ int main()
             if (cmd.verb == "help") { std::cout << parser.help_text(); continue; }
             if (cmd.verb.empty() || cmd.verb == "error") continue;
 
-            HandlerContext ctx{time_service, session};
+            HandlerContext ctx{time_service, mining_handler};
             auto r = connector.dispatch(cmd, ctx);
             std::cout << "[结果: " << result_text(r) << "]\n";
         }

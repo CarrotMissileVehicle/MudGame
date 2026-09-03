@@ -39,3 +39,13 @@ mining::MiningStatus MiningHandler::status() const noexcept
 {
     return state_.status();
 }
+
+const std::optional<std::size_t>& MiningHandler::layer_id() const noexcept
+{
+    return state_.layer_id();
+}
+
+time::GameDateTime MiningHandler::start_time() const noexcept
+{
+    return state_.start_time();
+}

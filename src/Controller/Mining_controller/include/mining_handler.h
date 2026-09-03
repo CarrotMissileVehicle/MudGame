@@ -9,6 +9,8 @@
 
 #include "mining_controller.h"
 
+#include <optional>
+
 /** @brief 采矿命令处理器：持有一个会话状态并转发给采矿控制器。 */
 class MiningHandler
 {
@@ -33,6 +35,12 @@ public:
 
     /** @brief 当前会话状态。 */
     mining::MiningStatus status() const noexcept;
+
+    /** @brief 当前会话目标层（未采矿时为空）。 */
+    const std::optional<std::size_t>& layer_id() const noexcept;
+
+    /** @brief 本次采矿开始时间。 */
+    time::GameDateTime start_time() const noexcept;
 
 private:
     MiningController& controller_; // 采矿控制器（外部所有）

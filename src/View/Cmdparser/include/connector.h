@@ -7,12 +7,12 @@
  *        → Connector::dispatch → (按 verb 查表) → 领域 handler
  *        → HandlerResult → main 打印反馈
  *
- * 依赖：time_service、mining_state、input_parser。
+ * 依赖：time_service、mining_handler、input_parser。
  */
 #pragma once
 
 #include "time_service.h"
-#include "mining_state.h"
+#include "mining_handler.h"
 #include "input_parser.h"
 
 #include <functional>
@@ -26,13 +26,14 @@ enum class HandlerResult { Ok, UnknownCommand, BadArgument, Failed };
 /**
  * @brief 派发给领域 handler 的运行时依赖集合。
  *
- * 以引用透传共享状态，时间服务为非常量引用以支持设置时间倍率。
+ * MVC 联动：View 层经由 Controller 层（MiningHandler）驱动采矿业务，
+ * 时间服务为非常量引用以支持设置时间倍率。
  */
 struct HandlerContext
 {
     // 透传给领域 handler 的运行时依赖
     mud::TimeService& time; // 非 const：time scale 需调用 set_time_scale
-    ::MiningState& session;
+    MiningHandler& mining;  // 采矿命令入口（内含会话状态，View 不直接触碰状态）
 };
 
 /** @brief 命令处理器回调类型：接收命令与上下文，返回处理结果。 */
