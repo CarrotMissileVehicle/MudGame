@@ -12,6 +12,7 @@
 #include "mining_state.h"
 #include "mining_types.h"
 #include "ore_data.h"
+#include "ore_layer.h"
 
 #include "time_service.h"
 
@@ -101,6 +102,9 @@ private:
     ) const;
 
 private:
-    const Ore::OreData& ore_data_;    // 矿石数据源（外部所有）
+    const Ore::OreData& ore_data_;    // 矿石数据源（外部所有，兼容预留）
     const TimeService& time_service_; // 时间服务（外部所有）
+
+    Ore ore_table_;    // 矿石属性与产出分布查询（自 JSON 加载）
+    Layer layer_table_; // 矿区层级/照明查询（自 JSON 加载）
 };

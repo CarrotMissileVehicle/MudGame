@@ -2,6 +2,7 @@
 add_library(mining_controller
     src/mining_controller.cpp
     src/mining_calculator.cpp
+    src/mining_handler.cpp
     src/mining_state.cpp
     src/ore_data.cpp
     src/ore_layer.cpp
