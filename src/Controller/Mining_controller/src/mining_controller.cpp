@@ -110,7 +110,7 @@ bool MiningController::is_mining(const MiningState& state) const noexcept
 }
 
 bool MiningController::can_enter_layer(
-    std::size_t layer_id,
+    const std::size_t layer_id,
     const mining::MiningContext& context
 ) const
 {
@@ -159,8 +159,8 @@ bool MiningController::check_lighting(
 }
 
 std::vector<mining::MiningResult> MiningController::produce(
-    std::size_t layer_id,
-    std::size_t count,
+    const std::size_t layer_id,
+    const std::size_t count,
     const mining::MiningContext& context
 ) const
 {
@@ -183,7 +183,7 @@ std::vector<mining::MiningResult> MiningController::produce(
 }
 
 std::string MiningController::random_ore(
-    std::size_t layer_id,
+    const std::size_t layer_id,
     const mining::MiningContext& context
 ) const
 {
