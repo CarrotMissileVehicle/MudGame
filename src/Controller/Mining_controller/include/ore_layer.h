@@ -16,6 +16,9 @@
 class Layer
 {
 public:
+    /** @brief 默认构造：从数据目录加载矿区层级定义（JSON）。 */
+    Layer();
+
     /** @brief 矿区照明需求类型。 */
     enum class LightingType {
         None,   // 不需要照明

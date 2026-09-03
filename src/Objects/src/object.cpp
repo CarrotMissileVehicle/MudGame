@@ -9,3 +9,7 @@
 //
 
 #include "object.h"
+
+object::object() = default;
+
+object::~object() = default;

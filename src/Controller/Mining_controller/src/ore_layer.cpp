@@ -2,30 +2,74 @@
  * @file ore_layer.cpp
  * @brief 矿区（层）数据查询实现。
  *
- * 注意：当前为桩实现（TODO），仅保留函数签名与语义说明。
+ * 通过 pjh_json 从游戏数据目录解析 mining_layers.json，
+ * 预填充矿区层级定义，提供查询。
  */
 #include "ore_layer.h"
 
-// 获取矿区名称
+#include "pjh_json.hpp"
+
+#include <stdexcept>
+#include <string>
+
+namespace
+{
+    inline const std::string& data_dir()
+    {
+        static const std::string dir = MUDGAME_DATA_DIR;
+        return dir;
+    }
+}
+
+Layer::Layer()
+{
+    using pjh::json::parse_file;
+
+    const auto path = data_dir() + "/Ore/mining_layers.json";
+    auto doc = parse_file(path);
+
+    for (const auto& [key, node] : doc.root().as_object())
+    {
+        const auto id = std::string(std::string_view(key));
+        const auto& l = node.as_object();
+
+        MiningLayer ml;
+        ml.name         = std::string(l.at("name").as_string());
+        ml.mining_level = static_cast<std::size_t>(l.at("mining_level").as_int());
+
+        const std::string lighting(l.at("lighting").as_string());
+        ml.lighting = (lighting == "none")  ? LightingType::None
+                    : (lighting == "torch") ? LightingType::Torch
+                                            : LightingType::Lantern;
+
+        layers_.emplace(id, std::move(ml));
+    }
+}
+
 std::string Layer::get_layer_name(const std::string& layer_id) const
 {
-    // TODO: 实现
+    const auto it = layers_.find(layer_id);
+    if (it == layers_.end()) throw std::out_of_range("unknown layer: " + layer_id);
+    return it->second.name;
 }
 
-// 获取矿区解锁所需采矿等级
 size_t Layer::get_layer_level(const std::string& layer_id) const
 {
-    // TODO: 实现
+    const auto it = layers_.find(layer_id);
+    if (it == layers_.end()) throw std::out_of_range("unknown layer: " + layer_id);
+    return it->second.mining_level;
 }
 
-// 获取矿区的照明需求类型
 Layer::LightingType Layer::get_lighting_type(const std::string& layer_id) const
 {
-    // TODO: 实现
+    const auto it = layers_.find(layer_id);
+    if (it == layers_.end()) throw std::out_of_range("unknown layer: " + layer_id);
+    return it->second.lighting;
 }
 
-// 是否需要对矿区进行照明
 bool Layer::requires_lighting(const std::string& layer_id) const
 {
-    // TODO: 实现
+    const auto it = layers_.find(layer_id);
+    if (it == layers_.end()) throw std::out_of_range("unknown layer: " + layer_id);
+    return it->second.lighting != LightingType::None;
 }
