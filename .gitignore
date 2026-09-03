@@ -253,3 +253,8 @@ credentials/
 .DS_Store
 Thumbs.db
 
+# --- 知识图谱本地产物（graphify / code-review-graph）---
+graphify-out/
+.graphify_*
+code-graph/
+
