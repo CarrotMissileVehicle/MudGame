@@ -6,8 +6,8 @@
 
 // 根据已用时长与生产间隔，计算应产出的次数（向下取整）
 std::size_t MiningCalculator::calculate_production_count(
-    time::gameMinutes elapsed,
-    time::gameMinutes interval
+    const time::gameMinutes elapsed,
+    const time::gameMinutes interval
 ) noexcept
 {
     if (elapsed <= 0 || interval <= 0)
@@ -17,8 +17,8 @@ std::size_t MiningCalculator::calculate_production_count(
 
 // 计算末次完整产出累计消耗的时长（用于记录剩余进度）
 time::gameMinutes MiningCalculator::calculate_consumed_time(
-    time::gameMinutes elapsed,
-    time::gameMinutes interval
+    const time::gameMinutes elapsed,
+    const time::gameMinutes interval
 ) noexcept
 {
     if (elapsed <= 0 || interval <= 0)

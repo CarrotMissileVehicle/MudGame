@@ -12,7 +12,7 @@ MiningHandler::MiningHandler(MiningController& controller)
 }
 
 bool MiningHandler::start(
-    std::size_t layer_id,
+    const std::size_t layer_id,
     const mining::MiningContext& context)
 {
     return controller_.start_mining(state_, layer_id, context);

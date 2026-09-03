@@ -16,7 +16,7 @@
 namespace
 {
     // size_t 层 id → JSON 层 key（与 mining::MiningLayer 枚举序一致）。
-    bool layer_key_for(std::size_t layer_id, std::string& out)
+    bool layer_key_for(const std::size_t layer_id, std::string& out)
     {
         static const char* const kLayerKeys[] = {
             "shallow", "middle", "deep", "crystal", "core"};
@@ -44,7 +44,7 @@ MiningController::MiningController(
 
 bool MiningController::start_mining(
     MiningState& state,
-    std::size_t layer_id,
+    const std::size_t layer_id,
     const mining::MiningContext& context
 )
 {
@@ -131,7 +131,7 @@ bool MiningController::can_enter_layer(
 }
 
 bool MiningController::check_lighting(
-    std::size_t layer_id,
+    const std::size_t layer_id,
     const mining::MiningContext& context
 ) const
 {

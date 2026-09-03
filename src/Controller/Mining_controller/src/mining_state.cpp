@@ -37,7 +37,7 @@ time::GameDateTime MiningState::last_tick() const noexcept
 // 以指定层与时间点启动采矿状态
 void MiningState::start(
     std::size_t layer_id,
-    time::GameDateTime now
+    const time::GameDateTime& now
 )
 {
     layer_id_ = layer_id;
@@ -49,7 +49,7 @@ void MiningState::start(
 
 // 刷新心跳时间点
 void MiningState::update_tick(
-    time::GameDateTime time
+    const time::GameDateTime& time
 )
 {
     last_tick_ = time;
