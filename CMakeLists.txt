@@ -32,6 +32,12 @@ FetchContent_MakeAvailable(pjh_json)
 
 add_subdirectory(src)
 
+# ---- 单元测试（CTest 开关控制，默认开启）----
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
 # 最终入口 main.cpp 暂未编写，先移出可执行目标以保证库构建可用；
 # 编写入口后恢复以下两行即可。
 # add_executable(MudGame main.cpp)
