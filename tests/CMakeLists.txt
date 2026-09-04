@@ -70,3 +70,38 @@ mudgame_add_timeservice_test(timeservice_clock_anomaly_test
 
 mudgame_add_timeservice_test(timeservice_load_test
     timeservice/load_concurrency/load_test.cpp)
+
+# ---- mining_controller 模块：按测试方向各建一个可执行目标 ----
+# mining_controller 以 PUBLIC 暴露 include 目录并注入 MUDGAME_DATA_DIR，
+# 测试目标链接 time_service + mining_controller 即可获得接口与数据路径；
+# gtest_main 提供 main() 入口。
+function(mudgame_add_mining_test target)
+    add_executable(${target} ${ARGN})
+    target_link_libraries(${target} PRIVATE gtest_main mining_controller)
+    target_compile_options(${target} PRIVATE -Wall -Wextra)
+    add_test(NAME ${target} COMMAND ${target})
+endfunction()
+
+mudgame_add_mining_test(mining_core_flow_test
+    mining_controller/core_flow/core_flow_test.cpp)
+
+mudgame_add_mining_test(mining_precondition_test
+    mining_controller/precondition/precondition_test.cpp)
+
+mudgame_add_mining_test(mining_probability_test
+    mining_controller/probability/probability_test.cpp)
+
+mudgame_add_mining_test(mining_boundary_test
+    mining_controller/boundary/boundary_test.cpp)
+
+mudgame_add_mining_test(mining_concurrency_test
+    mining_controller/concurrency/concurrency_test.cpp)
+
+mudgame_add_mining_test(mining_transaction_test
+    mining_controller/transaction/transaction_test.cpp)
+
+mudgame_add_mining_test(mining_economy_bag_test
+    mining_controller/economy_bag/economy_bag_test.cpp)
+
+mudgame_add_mining_test(mining_refresh_test
+    mining_controller/resource_refresh/resource_refresh_test.cpp)
