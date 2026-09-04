@@ -123,6 +123,7 @@ TEST(MiningCoreFlow, RestartAfterStop)
 {
     MiningFixture f;
     ASSERT_TRUE(f.handler.start(0, f.ok_ctx));
+    f.advance(2); // 累计 2 份产出后再停止
     ASSERT_FALSE(f.handler.stop(f.ok_ctx).empty());
     EXPECT_TRUE(f.handler.start(2, f.ok_ctx)); // 换层可再入
     EXPECT_TRUE(f.handler.is_mining());
