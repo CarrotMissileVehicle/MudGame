@@ -49,3 +49,9 @@ endfunction()
 
 mudgame_add_timeservice_test(timeservice_calendar_test
     timeservice/calendar_event/calendar_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_tick_test
+    timeservice/tick_engine/tick_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_scale_test
+    timeservice/time_scale/scale_test.cpp)
