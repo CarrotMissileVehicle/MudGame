@@ -211,3 +211,56 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# ============================================================
+# 本地环境产物 & 生产环境文件（不上传 GitHub）
+# ============================================================
+
+# --- 本地 IDE / 编辑器环境产物 ---
+.vscode/
+workspace.code-workspace
+
+# --- CLion / CMake 构建产物 ---
+graphify-out/
+.code-review-graph/
+cmake-build-*/
+cmake-build-debug/
+build/
+out/
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+
+# --- 生产环境 / 运行期数据 ---
+*.log
+logs/
+*.pid
+*.seed
+*.lock
+*.db
+*.sqlite
+*.sqlite3
+*.data.bak
+
+# --- 敏感配置与密钥（严禁上传）---
+*.pem
+*.key
+*.secret
+*.pfx
+secrets/
+credentials/
+*config.local.*
+*.local.json
+
+# --- 空目录占位 ---
+.DS_Store
+Thumbs.db
+
+# --- 知识图谱本地产物（graphify / code-review-graph）---
+graphify-out/
+.graphify_*
+code-graph/
+
