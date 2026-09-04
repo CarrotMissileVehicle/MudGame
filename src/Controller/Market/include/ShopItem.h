@@ -4,25 +4,16 @@
 #include "Object.h"
 
 // 商店中的单个可售物品条目。
-// 每个条目记录物品实例、基础价格与当前价格。
+// 价格一律取自物品自身，不再另设。
 class ShopItem
 {
 public:
-    ShopItem(Object* item = nullptr, int basePrice = 0,
-             int currentPrice = 0);
+    ShopItem(Object* item = nullptr);
 
     Object* getItem() const;
 
-    int getBasePrice() const;
-    void setBasePrice(int price);
-
-    int getCurrentPrice() const;
-    void setCurrentPrice(int price);
-
 private:
     Object* item;           // 物品实例
-    int basePrice;          // 基础价格
-    int currentPrice;       // 当前价格（基础价 × 浮动系数）
 };
 
 #endif //MUDGAME_SHOP_ITEM_H

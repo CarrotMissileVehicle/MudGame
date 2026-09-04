@@ -10,6 +10,7 @@
 class Object {
 public:
     Object(std::string name, std::string description, int health, int sellingPrice, int buyingPrice);
+    Object(int sellingPrice = 0, int buyingPrice = 0);
 
     [[nodiscard]] std::string GetName() const;
     [[nodiscard]] std::string GetDescription() const;

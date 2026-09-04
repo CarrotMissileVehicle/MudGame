@@ -20,8 +20,8 @@ public:
     const ShopItem& getItem(std::size_t index) const;
     ShopItem& getItem(std::size_t index);
 
-    // 计算某物品的当日购买价（基础价 × 浮动系数），未找到返回 -1
-    int getBuyPrice(Object* item, float factor = 1.0f) const;
+    // 计算某物品的当日购买价（含浮动），未找到返回 -1
+    int getBuyPrice(Object* item) const;
 
 private:
     std::string id;                 // 商店 ID

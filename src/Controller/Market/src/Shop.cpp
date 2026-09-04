@@ -21,7 +21,7 @@ ShopItem& Shop::getItem(std::size_t index) { return items[index]; }
 
 int Shop::getBuyPrice(Object* item) const {
     for (const ShopItem& entry : items) {
-        if (entry.getItem() == item) return entry.getCurrentPrice();
+        if (entry.getItem() == item) return item->GetBuyingPrice();
     }
     return -1;
 }

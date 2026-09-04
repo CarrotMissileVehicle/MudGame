@@ -94,7 +94,7 @@ float Market::getFluctuation(Object* item) const {
 
 float Market::normalSellPrice(Object* item) const {
     if (item == nullptr) return 0.0f;
-    float price = static_cast<float>(item->getSellingPrice());
+    float price = static_cast<float>(item->GetSellingPrice());
     return price * getFluctuation(item);
 }
 

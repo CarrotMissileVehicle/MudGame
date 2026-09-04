@@ -6,6 +6,9 @@
 
 #include "../include/Object.h"
 
+Object::Object(int sellingPrice, int buyingPrice)
+        : sellingPrice(sellingPrice), buyingPrice(buyingPrice) {}
+
 Object::Object(std::string name, std::string description, int health,  int sellingPrice, int buyingPrice) {
     this->name = std::move(name);
     this->description = std::move(description);

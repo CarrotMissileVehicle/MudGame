@@ -319,9 +319,7 @@ Shop
 
 ShopItem
 ├── item: Object*               // 物品指针
-├── basePrice: int              // 基础价格
-├── currentPrice: int           // 当前价格（随浮动更新）
-└── getItem() / getBasePrice() / getCurrentPrice()
+└── getItem()                   // 价格一律取自物品自身，不再另设
 ```
 
 ### 工具修复系统
