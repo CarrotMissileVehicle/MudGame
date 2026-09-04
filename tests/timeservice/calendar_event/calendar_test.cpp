@@ -79,12 +79,10 @@ TEST(Calendar, LeapYearDaysInFebruary) // 闰/平年 2 月天数，经 total_min
 
 TEST(Calendar, LargeSpanCrossesMultipleMonths) // TS-CE-007 大跨度推进的分段一致性
 {
-    auto step     = dt(1, 1, 1);
-    auto leap     = dt(2, 3, 1); // year1 non-leap: Jan+Feb=59 天，再从 epoch 直接取
-    const auto big = dt(2, 3, 1);
-    step.advance(366 * 1440 + 59 * 1440); // 从 epoch 推到 2/3/1
-    EXPECT_EQ(step, big);
-    EXPECT_EQ(step.total_minutes(), big.total_minutes());
+    auto step     = dt(0, 1, 1);      // 从纪元出发
+    step.advance(425 * 1440);         // 425 天 = year0 闰(366) + year1 Jan(31)+Feb(28)
+    EXPECT_EQ(step, dt(1, 3, 1));     // → 1/3/1
+    EXPECT_EQ(step.total_minutes(), 425 * 1440);
 }
 
 TEST(Calendar, AdvanceBackwardIsInverse) // TS-CE-005 total_minutes 双向互逆
