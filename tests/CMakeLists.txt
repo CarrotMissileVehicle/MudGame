@@ -58,3 +58,6 @@ mudgame_add_timeservice_test(timeservice_scale_test
 
 mudgame_add_timeservice_test(timeservice_timer_test
     timeservice/timer_queue/timer_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_cancel_test
+    timeservice/cancel_reset/cancel_test.cpp)
