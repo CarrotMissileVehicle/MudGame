@@ -55,3 +55,6 @@ mudgame_add_timeservice_test(timeservice_tick_test
 
 mudgame_add_timeservice_test(timeservice_scale_test
     timeservice/time_scale/scale_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_timer_test
+    timeservice/timer_queue/timer_test.cpp)
