@@ -40,3 +40,11 @@ mudgame_add_mining_test(mining_economy_bag_test
 
 mudgame_add_mining_test(mining_refresh_test
     resource_refresh/resource_refresh_test.cpp)
+
+# 事件/工具接入采矿：额外链接 tool_controller 与 weather_controller。
+add_executable(mining_event_tool_test
+    event_tool/event_tool_test.cpp)
+target_link_libraries(mining_event_tool_test
+    PRIVATE gtest_main mining_controller tool_controller weather_controller)
+target_compile_options(mining_event_tool_test PRIVATE -Wall -Wextra)
+add_test(NAME mining_event_tool_test COMMAND mining_event_tool_test)

@@ -8,12 +8,16 @@ add_library(mining_controller
     src/ore_layer.cpp
 )
 
-# 依赖物品基类(objects)与时间服务(time_service)，及 pjh_json 解析库。
+# 依赖物品基类(objects)与时间服务(time_service)，及 pjh_json 解析库；
+# 工具(tool_controller)与事件(weather_controller)为本模块私有接入，不向外部泄漏 include。
 target_link_libraries(mining_controller
     PUBLIC
         objects
         time_service
         pjh::json
+    PRIVATE
+        tool_controller
+        weather_controller
 )
 
 # 对外暴露本模块头文件目录。

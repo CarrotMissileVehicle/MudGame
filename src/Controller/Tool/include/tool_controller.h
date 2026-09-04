@@ -1,48 +1,44 @@
 /**
  * @file tool_Controller.h
- * @brief 工具控制器（ToolController）。
+ * @brief 工具控制器（mud::tool）。
  *
- * 统一管理多件工具（使用、查询、升级、修复），并在与 金币 / 背包 交互的
- * 环节协调资源扣减。玩家与背包依赖通过构造函数注入。
- *
- * 依赖：tool、tools、player、inventory。
+ * 统一管理 3 件工具（锄/竿/镐）：使用、耐久查询、等级加成。
+ * 升级/修复接口暂不提供（依赖金币/背包桩未就绪，属留白）。
  */
-#pragma once                  // 防止头文件被重复包含
+#pragma once
 
-#include <string>             // 字符串类型
-#include "tool.h"             // 工具 Model（单件工具的等级/耐久逻辑）
-#include "tools.h"            // 工具配置表(枚举/配置数据)
-#include "player.h"           // 依赖：玩家属性(金币)——占位
-#include "inventory.h"        // 依赖：背包(材料)——占位
+#include <string>
 
-// ---- 类：工具控制器 ----
-// 负责统一管理 3 件工具，并负责"升级/修复"时和 金币、背包 打交道。
-// 依赖(玩家、背包)通过构造函数注入。
-class ToolController {
-public:   // 公开区：给其他人调用的接口
-    // 构造函数：注入 玩家(看金币) 和 背包(看材料)
-    ToolController(Player& player, Inventory& inventory);
+#include "tool.h"
+#include "tools.h"
 
-    // ---- 使用相关 ----
-    bool useTool(ToolId id);        // 用一次工具(内部会扣耐久)；坏了返回 false
-    bool isBroken(ToolId id) const; // 这工具坏了吗
+namespace mud::tool
+{
+    /** @brief 工具控制器：管理 3 件工具，聚焦采矿所需能力。 */
+    class ToolController
+    {
+    public:
+        ToolController();
 
-    // ---- 查询相关 ----
-    int level(ToolId id) const;          // 当前等级
-    int durability(ToolId id) const;     // 当前耐久
-    std::string name(ToolId id) const;   // 工具名
-    // 等级带来的加成(如锄头多开垦地块、鱼竿加稀有鱼概率等)
-    int getLevelBonus(ToolId id) const;
+        /** 使用指定工具一次（扣耐久）；该工具损坏返回 false。 */
+        bool use_tool(ToolId id);
 
-    // ---- 升级 / 修复 ----
-    bool upgrade(ToolId id);             // 升级：校验金币+材料后才升
-    bool repair(ToolId id, bool useOre); // 修复：useOre=true 用矿石(费用减半)，否则用金币
+        /** 指定工具是否已损坏。 */
+        bool is_broken(ToolId id) const;
 
-private:   // 私有区
-    Tool& tool(ToolId id);               // 按id取出对应那把工具(方便内部用)
-    const ToolConfig& config(ToolId id) const;  // 取出该工具的配置表
+        /** 指定工具当前耐久。 */
+        int durability(ToolId id) const;
 
-    Tool tools_[kToolCount];   // 装着3件工具，下标对应 ToolId(0/1/2)
-    Player& player_;           // 注入的玩家(引用)
-    Inventory& inventory_;     // 注入的背包(引用)
-};
+        /** 指定工具等级加成（level - 1）。 */
+        int level_bonus(ToolId id) const;
+
+        /** 指定工具当前等级。 */
+        int level(ToolId id) const;
+
+        /** 指定工具名。 */
+        std::string name(ToolId id) const;
+
+    private:
+        Tool tools_[3]; // 下标对应 ToolId（Hoe=0/Rod=1/Pickaxe=2）
+    };
+}
