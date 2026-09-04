@@ -216,6 +216,8 @@ cython_debug/
 workspace.code-workspace
 
 # --- CLion / CMake 构建产物 ---
+graphify-out/
+.code-review-graph/
 cmake-build-*/
 cmake-build-debug/
 build/

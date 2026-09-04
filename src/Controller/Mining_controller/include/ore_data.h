@@ -20,6 +20,9 @@
 class Ore : public object
 {
 public:
+    /** @brief 默认构造：从数据目录加载矿石属性与各层产出分布（JSON）。 */
+    Ore();
+
     /** @brief 一种矿石的静态属性。 */
     struct OreData
     {

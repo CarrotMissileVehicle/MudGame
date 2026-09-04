@@ -21,7 +21,18 @@ FetchContent_Declare(cli11
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(cli11)
 
+# pjh_json：矿石/矿区 JSON 数据解析库。关闭其激进优化
+# (-march=native/-ffast-math/-flto) 传播，避免污染全工程。
+set(PJH_JSON_ENABLE_OPTIMIZATIONS OFF CACHE BOOL "Disable pjh_json aggressive opts" FORCE)
+FetchContent_Declare(pjh_json
+    GIT_REPOSITORY https://github.com/pjh456/pjh_json.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(pjh_json)
+
 add_subdirectory(src)
 
-add_executable(MudGame main.cpp)
-target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser)
+# 最终入口 main.cpp 暂未编写，先移出可执行目标以保证库构建可用；
+# 编写入口后恢复以下两行即可。
+# add_executable(MudGame main.cpp)
+# target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser)

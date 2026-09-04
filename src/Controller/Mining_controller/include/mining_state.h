@@ -46,12 +46,12 @@ public:
     /** @brief 开始采矿：设置状态、目标层与开始/计时时间。 */
     void start(
         std::size_t layer_id,
-        mud::time::GameDateTime now
+        const mud::time::GameDateTime& now
     );
 
     /** @brief 更新进度计时点为当前时间。 */
     void update_tick(
-        time::GameDateTime time
+        const time::GameDateTime& time
     );
 
     /** @brief 停止采矿：复位状态为 Idle。 */

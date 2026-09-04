@@ -4,7 +4,7 @@ add_library(cmd_parser
     src/connector.cpp
 )
 
-# connector.h 的 HandlerContext 依赖 TimeService 与 MiningState，
+# connector.h 的 HandlerContext 依赖 TimeService 与 MiningHandler，
 # 通过链接 time_service / mining_controller 继承其 PUBLIC include 目录。
 # CLI11::CLI11 提供命令行解析能力。
 target_link_libraries(cmd_parser
