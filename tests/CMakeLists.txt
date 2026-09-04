@@ -61,3 +61,12 @@ mudgame_add_timeservice_test(timeservice_timer_test
 
 mudgame_add_timeservice_test(timeservice_cancel_test
     timeservice/cancel_reset/cancel_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_precision_test
+    timeservice/precision/precision_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_clock_anomaly_test
+    timeservice/clock_anomaly/clock_anomaly_test.cpp)
+
+mudgame_add_timeservice_test(timeservice_load_test
+    timeservice/load_concurrency/load_test.cpp)
