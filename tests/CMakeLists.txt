@@ -36,3 +36,16 @@ mudgame_add_cmdparser_test(cmdparser_context_test
 
 mudgame_add_cmdparser_test(cmdparser_logic_test
     cmdparser/logic/connector_dispatch_test.cpp)
+
+# ---- time_service 模块：按测试方向各建一个可执行目标 ----
+# time_service 以 PUBLIC 暴露其 include 目录，测试目标链接 time_service 即可获得
+# GameDateTime 与 TimeService 接口；gtest_main 提供 main() 入口。
+function(mudgame_add_timeservice_test target)
+    add_executable(${target} ${ARGN})
+    target_link_libraries(${target} PRIVATE gtest_main time_service)
+    target_compile_options(${target} PRIVATE -Wall -Wextra)
+    add_test(NAME ${target} COMMAND ${target})
+endfunction()
+
+mudgame_add_timeservice_test(timeservice_calendar_test
+    timeservice/calendar_event/calendar_test.cpp)
