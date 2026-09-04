@@ -58,9 +58,9 @@ namespace mud::event
 
     void EventSystem::roll_mining_event(bool& found_chest, bool& cave_in, int rand_chance)
     {
-        // 矿洞塌方：5%
+        // 矿洞塌方：5%（rand_chance < 5，即 1-4）
         cave_in = (rand_chance < 5);
-        // 挖到宝箱：采矿时随机（简单固定 8%，与塌方独立判定）
-        found_chest = (rand_chance >= 80);
+        // 挖到宝箱：8%（rand_chance >= 93，即 93-100，共 8 个取值），与塌方独立判定
+        found_chest = (rand_chance >= 93);
     }
 }

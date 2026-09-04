@@ -3,7 +3,7 @@
 > 状态：基础功能已完成，可独立编译运行（含演示 main）。
 > 依赖的 `Player / Inventory / Farm` 目前为占位桩，接口为**协作约定**，待对应模块实现后替换。
 
----
+***
 
 ## 1. 概述
 
@@ -15,10 +15,12 @@ Model      ──► 上层            （禁止，Model 被动）
 ```
 
 - **天气系统**：5 种天气 + 静态概率配置；驱动农田浇水、钓鱼、采矿、外出的加成/限制。
+
 - **随机事件系统**：每日 08:00 固定事件 + 采矿中随机事件（宝箱/塌方）。
+
 - **工具系统**：锄头/鱼竿/矿镐 三件的使用、升级、修复。
 
----
+***
 
 ## 2. 目录结构
 
@@ -43,7 +45,7 @@ src/controller/tool/
     └── tool_controller.cpp
 ```
 
----
+***
 
 ## 3. 天气 Model（`mud::weather`）
 
@@ -86,15 +88,15 @@ public:
 
 ### 概率配置（`weather.cpp`）
 
-| 天气 | name | 概率 | 自动浇水 | 减产 | 采加成 | 钓减 | 可钓鱼 | 可外出 |
-|------|------|------|:---:|:---:|:---:|:---:|:---:|:---:|
-| Sunny  | 晴天   | 40% | –   | –    | –    | –    | ✅ | ✅ |
-| Rain   | 小雨   | 25% | ✅  | –    | –    | 10%  | ✅ | ✅ |
-| Cloudy | 阴天   | 20% | –   | –    | 20%  | –    | ✅ | ✅ |
-| Storm  | 暴风雨 | 10% | –   | 10%  | –    | –    | ❌ | ✅ |
-| Typhoon| 台风   | 5%  | –   | 35%  | –    | –    | ❌ | ❌ |
+| 天气      | name | 概率  | 自动浇水 |  减产 | 采加成 |  钓减 | 可钓鱼 | 可外出 |
+| ------- | ---- | --- | :--: | :-: | :-: | :-: | :-: | :-: |
+| Sunny   | 晴天   | 40% |   –  |  –  |  –  |  –  |  ✅  |  ✅  |
+| Rain    | 小雨   | 25% |   ✅  |  –  |  –  | 10% |  ✅  |  ✅  |
+| Cloudy  | 阴天   | 20% |   –  |  –  | 20% |  –  |  ✅  |  ✅  |
+| Storm   | 暴风雨  | 10% |   –  | 10% |  –  |  –  |  ❌  |  ✅  |
+| Typhoon | 台风   | 5%  |   –  | 35% |  –  |  –  |  ❌  |  ❌  |
 
----
+***
 
 ## 4. 随机事件 Model（`mud::event`）
 
@@ -128,18 +130,18 @@ public:
 
 ### 判定规则（`event.cpp`）
 
-| 事件 | name | 触发条件 |
-|------|------|----------|
-| Storm   | 暴风雨 | 每日判定，概率 8% |
-| Typhoon | 台风   | 每日判定，概率 3% |
-| Rain    | 小雨   | 每日判定，概率 20% |
-| Traveler| 旅行商人 | 周五必然触发 |
-| Pest    | 虫害   | 累计 3 天未浇水（`neglect_water=true`）时才判定 |
-| Chest / CaveIn | 宝箱/塌方 | 采矿中，`rand_chance` 门槛判定 |
+| 事件             | name  | 触发条件                                                |
+| -------------- | ----- | --------------------------------------------------- |
+| Storm          | 暴风雨   | 每日判定，概率 8%                                          |
+| Typhoon        | 台风    | 每日判定，概率 3%                                          |
+| Rain           | 小雨    | 每日判定，概率 20%                                         |
+| Traveler       | 旅行商人  | 周五必然触发                                              |
+| Pest           | 虫害    | 累计 3 天未浇水（`neglect_water=true`）时才判定                 |
+| Chest / CaveIn | 宝箱/塌方 | 采矿中：宝箱 8%（`rand_chance>=93`）、塌方 5%（`rand_chance<5`） |
 
-> `rand_chance` 约定取值 `1..100`。宝箱概率数值目前实现与 `>=80` 有关，见文末"待确认"。
+> `rand_chance` 约定取值 `1..100`；宝箱与塌方按区间独立判定，互不重叠（塌方 1-4，宝箱 93-100）。
 
----
+***
 
 ## 5. 天气与事件 Controller（`WeatherController`）
 
@@ -173,7 +175,7 @@ void roll_mining_event(bool& found_chest, bool& cave_in);
 
 内部状态缓存 `last_weather_day_` / `last_event_day_`，保证跨天只生成一次、08:00 只触发一次（由调用方传入 `day/hour` 驱动）。
 
----
+***
 
 ## 6. 工具 Model（`mud::tool`）
 
@@ -201,11 +203,11 @@ struct ToolConfig {
 
 ### 静态配置表（`kToolConfigs`）
 
-| 工具 | name | 耐久 | 每用消耗 | 最高级 | 升级费(L2/L3) | 升级材料 | 矿修 | 修复基准 |
-|------|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hoe     | 锄头 | 50 | 1 | 3 | 50 / 100     | 铁矿×5 → 银矿×3 | 铁矿×2 | 50 |
-| Rod     | 鱼竿 | 30 | 1 | 3 | 80 / 200     | 铁矿×5 → 银矿×3 | 银矿×2 | 80 |
-| Pickaxe | 矿镐 | 25 | 2 | 3 | 80 / 200     | 铁矿×5 → 银矿×3 | 铁矿×2 | 80 |
+| 工具      | name |  耐久 | 每用消耗 | 最高级 | 升级费(L2/L3) |     升级材料    |  矿修  | 修复基准 |
+| ------- | ---- | :-: | :--: | :-: | :--------: | :---------: | :--: | :--: |
+| Hoe     | 锄头   |  50 |   1  |  3  |  50 / 100  | 铁矿×5 → 银矿×3 | 铁矿×2 |  50  |
+| Rod     | 鱼竿   |  30 |   1  |  3  |  80 / 200  | 铁矿×5 → 银矿×3 | 银矿×2 |  80  |
+| Pickaxe | 矿镐   |  25 |   2  |  3  |  80 / 200  | 铁矿×5 → 银矿×3 | 铁矿×2 |  80  |
 
 ### 类接口
 
@@ -225,7 +227,7 @@ public:
 };
 ```
 
----
+***
 
 ## 7. 工具 Controller（`ToolController`）
 
@@ -259,19 +261,19 @@ bool repair(mud::tool::ToolId id, bool use_ore, std::size_t slot = 0); // use_or
 内部按 `ToolId` 持有 `std::vector<Tool>`（默认每类 1 件），支持同时持有多件。
 `Tool` 继承物品基类 `Object`（`src/model/Objects/include/Object.h`），故工具是可持有的物品；其耐久以 `Tool::durability` 为准。
 
----
+***
 
 ## 8. 依赖桩契约（协作接口）
 
 下列模块未实现，当前为 **header-only 占位桩**（队友实现后接口不变即可替换）：
 
-| 头文件 | 契约接口 | 说明 |
-|--------|----------|------|
-| `src/models/player/include/player.h` | `spend_gold(int)` / `add_gold(int)` / `gold()` | 工具升级/修复扣金币 |
-| `src/models/inventory/include/inventory.h` | `has_item(id,count)` / `remove_item` / `add_item` | 升级材料校验与消耗 |
-| `src/models/farm/include/farm.h` | `auto_water()` | 雨天自动浇水 |
+| 头文件                                        | 契约接口                                              | 说明         |
+| ------------------------------------------ | ------------------------------------------------- | ---------- |
+| `src/models/player/include/player.h`       | `spend_gold(int)` / `add_gold(int)` / `gold()`    | 工具升级/修复扣金币 |
+| `src/models/inventory/include/inventory.h` | `has_item(id,count)` / `remove_item` / `add_item` | 升级材料校验与消耗  |
+| `src/models/farm/include/farm.h`           | `auto_water()`                                    | 雨天自动浇水     |
 
----
+***
 
 ## 9. 使用示例
 
@@ -308,10 +310,12 @@ bool up = tool.upgrade(ToolId::Hoe, /*slot=*/0);          // 升主件一级
 bool r  = tool.repair(ToolId::Pickaxe, /*use_ore=*/true, /*slot=*/0); // 用矿石修第 1 件
 ```
 
----
+***
 
-## 10. 待确认 / 已知问题
+## 10. 已知问题
 
-1. **宝箱概率与注释不符**：`event.cpp` 中 `roll_mining_event` 判定 `rand_chance >= 80`（≈21%），但注释写"固定 8%"。需按 `proj.md` 确认宝箱概率数值（如需 8%，应改 `>= 92`）。
-2. **中文编码**：含 UTF-8 中文的文件必须带 `/utf-8` 编译，否则 MSVC 按 GBK 读取会报错。
-3. **命名空间**：本系统统一 `mud::weather` / `mud::event` / `mud::tool`，与全项目 `mud` 风格一致。
+1. **中文编码**：含 UTF-8 中文的文件必须带 `/utf-8` 编译，否则 MSVC 按 GBK 读取会报错。
+2. **命名空间**：本系统统一 `mud::weather` / `mud::event` / `mud::tool`，与全项目 `mud` 风格一致。
+
+> 采矿宝箱概率已对齐为 8%（`roll_mining_event` 中 `rand_chance >= 93`），数值以本文件 §4 为准。
+
