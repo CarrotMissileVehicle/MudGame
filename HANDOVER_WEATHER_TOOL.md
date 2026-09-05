@@ -1,103 +1,48 @@
-# 天气 / 随机事件 / 工具系统 —— 交接说明
+# 事件 / 工具系统 —— 现状与待办
 
 > 分支：`zhangmx`
-> 状态：**基础功能已完成并可编译运行**，但有 3 处依赖桩 + 1 处待确认数值，需要相关模块负责人按本文件完成对接后方可闭环。
-> 相关代码：`src/controller/weather/`、`src/controller/tool/`，接口详见根目录 `interface_weather_tool.md`。
+> 状态：本文档描述当前分支**已落地可编译运行**的事件与工具系统。上一版交接文档中针对 `src/models` 三个占位桩（`farm.h` / `inventory.h` / `player.h`）的"依赖桩替换契约"已随桩文件于 2026-09-05 删除而失效，本文档不再记录桩契约，改为对齐真实模块。
+> 接口细节见根目录 `interface_weather_tool.md`。
 
-***
+## 0. 现状总览
 
-## 0. 交接总览
+| # | 事项 | 状态 |
+| - | ---- | :--: |
+| 1 | 采矿随机事件（宝箱 8% / 塌方 5%） | 已完成并接入采矿 |
+| 2 | 工具模型与控制器（锄/竿/镐 使用与耐久） | 已完成并接入采矿（矿镐） |
+| 3 | 天气枚举与逐日预报、WeatherController | 留白，未入构建 |
+| 4 | 工具升级 / 修复接入金币与背包 | 留白 |
 
-| # | 事项                          | 类型    | 负责模块   | 是否阻塞 |
-| - | --------------------------- | ----- | ------ | :--: |
-| 1 | `farm.h` 桩 → 实现自动浇水联动       | 依赖桩替换 | 种菜系统   |  ✅ 是 |
-| 2 | `player.h` 桩 → 实现玩家金币/属性    | 依赖桩替换 | 玩家属性系统 |  ✅ 是 |
-| 3 | `inventory.h` 桩 → 实现材料校验与消耗 | 依赖桩替换 | 背包系统   |  ✅ 是 |
-| 4 | 采矿宝箱概率对齐为 8%                | 已完成   | 本项目    |  ❌ 否 |
+## 1. 已落地实现
 
-> 1-3 可通过"保留现有接口签名、替换桩实现"方式对接，**不需要本系统改动**。
-> 4 已修复并同步文档，见 §2；若后续策划调整数值再改。
+### 1.1 事件模型（`mud::event`）
 
-***
+文件：`src/Controller/Weather/include/event.h`、`src/event.cpp`
 
-## 1. 依赖桩替换契约（重点交接对象）
+`EventSystem::roll_mining_event(found_chest, cave_in, rand_chance)`：塌方 `rand_chance < 5`，宝箱 `rand_chance >= 93`，区间不重叠。在 `MiningController::produce` 中逐次产出判定：塌方清空本 tick 并中断会话，宝箱使当次产出数量翻倍。
 
-本系统通过**构造函数注入**依赖以下 Model，当前均为 header-only 占位桩（[src/models/](file:///d:/@VS2022Code/mudgame/src/models)）。对接时**保持接口签名不变，只替换实现**，本系统无需改动。
+### 1.2 工具模型与控制器（`mud::tool`）
 
-### 1.1 农田 `farm.h`（种菜系统负责）
+文件：`src/Controller/Tool/include/{tool.h, tools.h, tool_Controller.h}`
 
-文件：`src/models/farm/include/farm.h`
+`Tool` 单件工具持有等级与耐久，提供 `use` / `is_broken` / 查询 / `upgrade` / `repair_fully`。`ToolController` 默认装配三件（锄 50 耐久、鱼竿 40、矿镐 20，每用耗 1，等级上限 5），暴露使用与查询接口。采矿集成仅使用矿镐：每次产出 `use_tool(Pickaxe)` 扣 1 耐久，损坏即中断会话；经验按 `1 + level_bonus(Pickaxe)` 乘结算。
 
-- 当前桩：`Farm::auto_water()` 为空函数，**天气的下雨自动浇水目前不产生实际效果**。
+## 2. 留白与接入前提
 
-| 所需接口                      | 契约                | 说明                          |
-| ------------------------- | ----------------- | --------------------------- |
-| `void Farm::auto_water()` | 雨天批量给已种植但未浇水的地块浇水 | 替换桩为真实实现即可；此时天气系统会在跨天遇雨自动调用 |
+### 2.1 天气枚举与逐日预报、WeatherController（未入构建）
 
-调用入口：`WeatherController::update` 跨天分支，天气为雨天（`auto_water()==true`）时调用 `farm_.auto_water()`。
+`weather.h` / `weather.cpp` 为空文件；`weather_Controller.h/cpp` 未列入 `weather_controller` 库的构建源（该库仅编译 `event.cpp`）。`weather_Controller.cpp` 中引用的 `farm_.autoWater()`、`time_.day()` / `time_.hour()` 与当前 `Farm`（`src/Controller/Farm`，骨架态）和 `TimeService`（`mud::TimeService`，仅 `now().GameDateTime`）不一致。接入前提：
 
-### 1.2 玩家属性 `player.h`（玩家属性系统负责）
+- 种菜子系统成型，由真实 `Farm` 提供 `autoWater()`；
+- `TimeService` 补充按字段读取或由 `now()` 字段驱动判定；
+- 将 `weather_Controller.cpp` 加入 `weather_controller` 库源即可编译联调。
 
-文件：`src/models/player/include/player.h`
+### 2.2 工具升级 / 修复接入金币与背包（留白）
 
-- 当前桩：仅实现金币三接口，其余属性（饱食/经验/等级/状态）留 TODO，本系统暂未使用。
+`Tool::upgrade` / `repair_fully` 已实现，但 `ToolController` 未透出，也未接入金币与背包校验。此前占位桩提供的 `spend_gold` / `has_item` / `remove_item` / `add_item` 接口已随桩删除，真实金币/背包入口以 `Player`（`src/Controller/Player`，含 `Bag`）为准，接入时以真实模块接口为准，不再沿用旧桩签名。
 
-| 所需接口                           | 契约               | 说明             |
-| ------------------------------ | ---------------- | -------------- |
-| `bool Player::spend_gold(int)` | 扣金币，不足返回 `false` | 工具升级/修复扣款      |
-| `void Player::add_gold(int)`   | 加金币              | 本系统当前未调用，为契约预留 |
-| `int Player::gold() const`     | 查金币              | 铁匠铺 UI 展示用     |
+## 3. 工程约束
 
-### 1.3 背包 `inventory.h`（背包系统负责）
-
-文件：`src/models/inventory/include/inventory.h`
-
-- 当前桩：`has_item` **恒返回** **`true`**、`remove_item`/`add_item` **空操作**。
-
-- ⚠️ 这意味着**工具升级/修复的材料校验目前是"假通过"**——升级永远成功、材料永不消耗。替换为真实背包后才有效。
-
-| 所需接口                                     | 契约         | 说明        |
-| ---------------------------------------- | ---------- | --------- |
-| `bool Inventory::has_item(id, count)`    | 判断是否持有足够数量 | 当前假通过，需实现 |
-| `void Inventory::remove_item(id, count)` | 扣除材料       | 当前空操作，需实现 |
-| `void Inventory::add_item(id, count)`    | 增加材料       | 契约预留      |
-
-调用入口：`ToolController::upgrade`（先扣金币→查验材料→够才升级，不足退钱）/ `repair`。
-
-***
-
-## 2. 待确认数值的处置：采矿宝箱概率
-
-文件：`src/controller/weather/src/event.cpp` → `EventSystem::roll_mining_event`
-
-状态：**已按注释设定的 8% 对齐修复**（此前实现为 `>=80`≈21%，与注释 8% 不符）。
-
-当前实现（与 proj.md 一致）：
-
-```cpp
-cave_in       = (rand_chance < 5);     // 矿洞塌方 5%（1-4）✅
-found_chest   = (rand_chance >= 93);   // 挖到宝箱 8%（93-100，共 8 个取值）
-```
-
-- proj.md 对宝箱仅写"采矿时随机"，未给具体数值；本实现采用注释原意的 8%。若后续策划定为其他数值，只需改 `>=93` 的阈值并同步两侧文档即可。
-
-***
-
-## 3. 已知语义说明（非 bug，设计如此，知悉即可）
-
-1. **天气与每日随机事件各自独立随机**：可能出现当天天气=暴风雨、随机事件=小雨这类表面对不上的组合。因为天气 Model 与事件 Model 各管各的。如需"天气与事件严格对应"需另行调整（涉及 `WeatherController::update` 的调度逻辑）。
-2. **虫害判定与雨天**：雨天会自动浇水，视为"当天已浇水"，会中断连续未浇水的累计。属预期行为。
-3. **旅行商人**：每周五（`day_of_week == 5`，第 0 天为周一）无条件触发。
-
-***
-
-## 4. 对对接者的实现约束
-
-- 保持 `mud::` 命名空间与 snake\_case 命名规范，与全项目一致。
-
-- 源文件含 UTF-8 中文，MSVC 需带 `/utf-8` 编译（各 CMakeLists 已设置）。
-
-- MVC 依赖方向：**Model 不得调用上层**，只做数据/逻辑，由 Controller 调度。
-
-- 对接完成后建议重新跑一遍演示 main（`build_msvc/verify_frame.bat`）确认无回归。
-
+- 新模块统一 `mud::` 命名空间 + snake_case；继承 `Player / Bag / Farm` 等处改用对应模块既有风格（旧 Model 模块为全局 + PascalCase）。
+- 源文件含 UTF-8 中文，MSVC 编译需带 `/utf-8`（各模块 CMakeLists 已设置）。
+- 依赖方向保持 MVC 单向，跨模块依赖经构造函数注入。

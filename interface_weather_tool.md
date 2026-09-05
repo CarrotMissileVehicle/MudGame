@@ -1,321 +1,168 @@
-# 天气 / 随机事件 / 工具系统 —— 接口文档
+# 事件 / 工具系统接口文档
 
-> 状态：基础功能已完成，可独立编译运行（含演示 main）。
-> 依赖的 `Player / Inventory / Farm` 目前为占位桩，接口为**协作约定**，待对应模块实现后替换。
-
-***
+> 状态：本文档对齐 `zhangmx` 分支当前已落地代码（`src/Controller/Weather`、`src/Controller/Tool`）。
+> 天气枚举与逐日预报在本分支仍为留白（`weather.h` / `weather.cpp` 均为空文件），不在本文档的接口范围内，详见文末"现状缺口"。
 
 ## 1. 概述
 
-本工程采用 **MVC 三层**架构。天气与随机事件、工具两个系统分别拆为 **Model（纯数据+纯逻辑）** 与 **Controller（流程调度）**，层间依赖方向唯一：
+工程采用 MVC 三层，本目录代码分为 Model（纯数据、纯逻辑）与 Controller（流程调度），依赖方向单向：`Controller -> Model / View`，Model 不回调上层。
 
-```text
-Controller ──► Model / View     （允许）
-Model      ──► 上层            （禁止，Model 被动）
-```
+当前构建内实际落地的两处能力：
 
-- **天气系统**：5 种天气 + 静态概率配置；驱动农田浇水、钓鱼、采矿、外出的加成/限制。
+- 事件模型 `mud::event`：采矿随机事件判定（宝箱翻倍、塌方中断）。
+- 工具模型与控制器 `mud::tool`：锄头、鱼竿、矿镐三件工具的等级、耐久与使用。
 
-- **随机事件系统**：每日 08:00 固定事件 + 采矿中随机事件（宝箱/塌方）。
-
-- **工具系统**：锄头/鱼竿/矿镐 三件的使用、升级、修复。
-
-***
+采矿控制器把这两处作为可选依赖注入，驱动每次产出的收益结算，见第 6 节。
 
 ## 2. 目录结构
 
 ```text
-src/controller/weather/
+src/Controller/Weather/
 ├── include/
-│   ├── weather.h              // 天气模型 WeatherType/WeatherConfig/Weather
-│   ├── event.h                // 事件模型 EventType/EventScope/EventSystem
-│   └── weather_controller.h   // WeatherController
+│   ├── weather.h            // 空文件，天气预报留白
+│   ├── weather_Controller.h // WeatherController 声明（未入构建）
+│   └── event.h              // mud::event::EventSystem
 └── src/
-    ├── weather.cpp
-    ├── event.cpp
-    └── weather_controller.cpp
+    ├── weather.cpp          // 空文件
+    ├── event.cpp            // EventSystem::roll_mining_event 实现
+    └── weather_Controller.cpp // 未入构建
 
-src/controller/tool/
+src/Controller/Tool/
 ├── include/
-│   ├── tool.h                 // 工具模型 ToolId/ToolConfig/Tool
-│   ├── tools.h                // 静态配置表 kToolConfigs / kToolCount
-│   └── tool_controller.h      // ToolController
+│   ├── tool.h               // mud::tool::Tool
+│   ├── tools.h              // mud::tool::ToolId / ToolConfig / kToolConfigs
+│   └── tool_Controller.h    // mud::tool::ToolController
 └── src/
-    ├── tool.cpp
-    └── tool_controller.cpp
+    ├── tool.cpp             // Tool 实现 + kToolConfigs 定义
+    └── tool_Controller.cpp  // ToolController 实现
 ```
 
-***
+## 3. 事件模型（`mud::event`）
 
-## 3. 天气 Model（`mud::weather`）
-
-文件：`src/controller/weather/include/weather.h`
-
-### 枚举与配置表
+文件：`src/Controller/Weather/include/event.h`
 
 ```cpp
-enum class WeatherType { Sunny, Rain, Cloudy, Storm, Typhoon }; // 晴/小雨/阴/暴风雨/台风
-
-struct WeatherConfig {
-    WeatherType type;
-    const char* name;
-    double probability;          // 当日出现概率
-    bool   auto_water;           // 是否自动给农田浇水
-    double crop_loss;            // 农作物减产比例
-    double mining_exp_bonus;     // 采矿经验加成
-    double fishing_penalty;      // 钓鱼成功率减益
-    bool   can_fish;             // 能否钓鱼
-    bool   can_go_outside;       // 能否外出
-};
+namespace mud::event
+{
+    struct EventSystem
+    {
+        void roll_mining_event(bool& found_chest, bool& cave_in, int rand_chance) const;
+    };
+}
 ```
 
-### 类接口
+判定规则（`event.cpp`，`rand_chance` 约定落于闭区间 `[1,100]`）：
+
+| 事件   | 区间        | 概率  | 效果                 |
+| ------ | --------- | :--: | -------------------- |
+| 塌方   | `< 5` (1-4) | 约 5% | 中断本 tick 结算，结束会话 |
+| 宝箱   | `>= 93` (93-100) | 约 8% | 本次产出的数量翻倍        |
+| 其他   | 5-92      | 约 87% | 无事件                |
+
+塌方与宝箱区间互不重叠，一次判定最多命中其一。
+
+## 4. 工具模型（`mud::tool`）
+
+文件：`src/Controller/Tool/include/tool.h`、`tools.h`
+
+### 枚举与配置
 
 ```cpp
-class Weather {
-public:
-    void generate_daily();                  // 按概率生成当天天气（跨天 06:00 调用）
-    WeatherType current() const noexcept;
-    std::string current_name() const;
-    bool   can_fish() const noexcept;       // 晴/小雨/阴可钓；暴风雨、台风不可
-    bool   can_go_outside() const noexcept; // 仅台风不可外出
-    bool   auto_water() const noexcept;
-    double crop_loss_rate() const noexcept;
-    double mining_exp_bonus() const noexcept;
-    double fishing_penalty() const noexcept;
-};
-```
+enum class ToolId : int { Hoe = 0, Rod = 1, Pickaxe = 2 };
 
-### 概率配置（`weather.cpp`）
-
-| 天气      | name | 概率  | 自动浇水 |  减产 | 采加成 |  钓减 | 可钓鱼 | 可外出 |
-| ------- | ---- | --- | :--: | :-: | :-: | :-: | :-: | :-: |
-| Sunny   | 晴天   | 40% |   –  |  –  |  –  |  –  |  ✅  |  ✅  |
-| Rain    | 小雨   | 25% |   ✅  |  –  |  –  | 10% |  ✅  |  ✅  |
-| Cloudy  | 阴天   | 20% |   –  |  –  | 20% |  –  |  ✅  |  ✅  |
-| Storm   | 暴风雨  | 10% |   –  | 10% |  –  |  –  |  ❌  |  ✅  |
-| Typhoon | 台风   | 5%  |   –  | 35% |  –  |  –  |  ❌  |  ❌  |
-
-***
-
-## 4. 随机事件 Model（`mud::event`）
-
-文件：`src/controller/weather/include/event.h`
-
-### 枚举与配置表
-
-```cpp
-enum class EventType { Storm, Typhoon, Rain, Traveler, Pest, Chest, CaveIn };
-
-enum class EventScope { Daily08, Mining };   // 每日 08:00 / 采矿中
-
-struct EventConfig {
-    EventType type;
-    EventScope scope;
-    const char* name;
-};
-```
-
-### 类接口
-
-```cpp
-class EventSystem {
-public:
-    void generate_daily_events(int day_of_week, bool neglect_water, int rand_chance);
-    bool has_event(EventType type) const noexcept;
-    bool is_traveler_active() const noexcept;
-    void roll_mining_event(bool& found_chest, bool& cave_in, int rand_chance);
-};
-```
-
-### 判定规则（`event.cpp`）
-
-| 事件             | name  | 触发条件                                                |
-| -------------- | ----- | --------------------------------------------------- |
-| Storm          | 暴风雨   | 每日判定，概率 8%                                          |
-| Typhoon        | 台风    | 每日判定，概率 3%                                          |
-| Rain           | 小雨    | 每日判定，概率 20%                                         |
-| Traveler       | 旅行商人  | 周五必然触发                                              |
-| Pest           | 虫害    | 累计 3 天未浇水（`neglect_water=true`）时才判定                 |
-| Chest / CaveIn | 宝箱/塌方 | 采矿中：宝箱 8%（`rand_chance>=93`）、塌方 5%（`rand_chance<5`） |
-
-> `rand_chance` 约定取值 `1..100`；宝箱与塌方按区间独立判定，互不重叠（塌方 1-4，宝箱 93-100）。
-
-***
-
-## 5. 天气与事件 Controller（`WeatherController`）
-
-文件：`src/controller/weather/include/weather_controller.h`
-
-```cpp
-WeatherController(mud::Farm& farm);       // 构造注入农田引用
-
-void update(int day, int hour);           // 每帧调用；
-                                          //   06:00 生成当天天气并自动浇水
-                                          //   08:00 触发当天每日事件
-
-// 天气查询（转发至天气 Model）
-mud::weather::WeatherType weather() const;
-std::string weather_name() const;
-bool  can_fish() const;
-bool  can_go_outside() const;
-bool  auto_water() const;
-double crop_loss_rate() const;
-double mining_exp_bonus() const;
-double fishing_penalty() const;
-
-// 事件查询
-bool  has_event(mud::event::EventType type) const;
-bool  is_traveler_active() const;
-std::vector<std::string> today_event_names() const;
-
-// 采矿随机事件（宝箱/塌方）
-void roll_mining_event(bool& found_chest, bool& cave_in);
-```
-
-内部状态缓存 `last_weather_day_` / `last_event_day_`，保证跨天只生成一次、08:00 只触发一次（由调用方传入 `day/hour` 驱动）。
-
-***
-
-## 6. 工具 Model（`mud::tool`）
-
-文件：`src/controller/tool/include/tool.h`、`tools.h`
-
-### 枚举与结构
-
-```cpp
-enum class ToolId { Hoe = 0, Rod = 1, Pickaxe = 2 };   // 锄头/鱼竿/矿镐
-
-struct ToolConfig {
+struct ToolConfig
+{
     ToolId id;
     const char* name;
-    int max_durability;         // 初始/最大耐久
-    int durability_per_use;     // 每次使用消耗
+    int max_durability;
+    int durability_per_use;
     int max_level;
     int upgrade_cost[2];
     const char* upgrade_material[2];
     int upgrade_material_count[2];
     const char* repair_ore;
-    int  repair_ore_count;
-    int  repair_base_gold;
+    int repair_ore_count;
+    int repair_base_gold;
 };
+
+extern const ToolConfig kToolConfigs[3]; // 下标即 ToolId 枚举序
 ```
 
-### 静态配置表（`kToolConfigs`）
+配置表（`tool.cpp` 当前值）：
 
-| 工具      | name |  耐久 | 每用消耗 | 最高级 | 升级费(L2/L3) |     升级材料    |  矿修  | 修复基准 |
-| ------- | ---- | :-: | :--: | :-: | :--------: | :---------: | :--: | :--: |
-| Hoe     | 锄头   |  50 |   1  |  3  |  50 / 100  | 铁矿×5 → 银矿×3 | 铁矿×2 |  50  |
-| Rod     | 鱼竿   |  30 |   1  |  3  |  80 / 200  | 铁矿×5 → 银矿×3 | 银矿×2 |  80  |
-| Pickaxe | 矿镐   |  25 |   2  |  3  |  80 / 200  | 铁矿×5 → 银矿×3 | 铁矿×2 |  80  |
+| 工具      | name | 满耐久 | 每用消耗 | 等级上限 | 升级费(L2/L3) | 升级材料         | 修复矿石 |
+| ------- | ---- | :-: | :-: | :-: | :-: | ------------ | ---- |
+| Hoe     | 锄头   | 50  | 1  | 5  | 10 / 30 | wood ×2 → stone ×3 | copper |
+| Rod     | 鱼竿   | 40  | 1  | 5  | 10 / 30 | wood ×2 → stone ×3 | copper |
+| Pickaxe | 矿镐   | 20  | 1  | 5  | 10 / 30 | wood ×2 → stone ×3 | iron  |
 
-### 类接口
+升级费、升级材料、修复矿石字段为未来金币/背包系统接入预留，当前生成流程不使用。
+
+### 类接口（单件工具）
 
 ```cpp
 class Tool {
 public:
     explicit Tool(ToolId id);
-    bool use();                  // 扣一次耐久；损坏返回 false
-    bool is_broken() const;      // 判定耐久耗尽
-    int  level() const;  int max_level() const;
-    int  durability() const;  int max_durability() const;
-    int  durability_per_use() const;
-    const char* name() const;
-    int  level_bonus() const;    // 加成 = 等级 - 1
-    bool upgrade();              // 升一级（调用方先校验钱/材料）
-    void repair_fully();         // 耐久回满
+    bool use();                 // 扣一次耐久；损坏返回 false
+    bool is_broken() const;     // 耐久不足以完成一次使用
+    int level() const;  int max_level() const;
+    int durability() const;  int max_durability() const;
+    int durability_per_use() const;
+    std::string name() const;
+    int level_bonus() const;    // 加成 = 等级 - 1
+    bool upgrade();             // 未达上限则 +1；满级返回 false
+    void repair_fully();        // 耐久回满
 };
 ```
 
-***
+`is_broken` 判据为 `durability < durability_per_use`，即耐久不足以支撑再一次使用即视为损坏。
 
-## 7. 工具 Controller（`ToolController`）
+## 5. 工具控制器（`mud::tool::ToolController`）
 
-文件：`src/controller/tool/include/tool_controller.h`
+文件：`src/Controller/Tool/include/tool_Controller.h`
 
-```cpp
-ToolController(mud::Player& player, mud::Inventory& inventory);  // 注入金币/背包
-
-// ---- 持有：每类工具可同时持有多件（工具继承物品基类 Object）----
-std::size_t tool_count(mud::tool::ToolId id) const; // 该类型当前持有件数
-bool add_tool(mud::tool::ToolId id);                // 新增一件同类型工具
-
-// ---- 使用：自动选一件未损坏的，一件用尽时自动换下一件 ----
-bool use_tool(mud::tool::ToolId id);                   // 自动选第一件未损坏的；全部损坏则 false
-bool use_tool(mud::tool::ToolId id, std::size_t slot); // 明确使用第 slot 件
-bool is_broken(mud::tool::ToolId id) const;            // 该类型是否已无可用工具（全部损坏）
-std::size_t broken_count(mud::tool::ToolId id) const;  // 该类型已损坏件数
-
-// ---- 查询（slot 默认主件 = 0）----
-int  level(mud::tool::ToolId id, std::size_t slot = 0) const;
-int  durability(mud::tool::ToolId id, std::size_t slot = 0) const;
-int  max_durability(mud::tool::ToolId id, std::size_t slot = 0) const;
-int  level_bonus(mud::tool::ToolId id, std::size_t slot = 0) const;
-std::string name(mud::tool::ToolId id) const;
-
-// ---- 升级 / 修复（slot 默认主件 = 0）----
-bool upgrade(mud::tool::ToolId id, std::size_t slot = 0);         // 先扣金币→查验材料→够才升级；不足自动退钱
-bool repair(mud::tool::ToolId id, bool use_ore, std::size_t slot = 0); // use_ore=true 用矿石(免金币)，否则按损耗比例收金币
-```
-
-内部按 `ToolId` 持有 `std::vector<Tool>`（默认每类 1 件），支持同时持有多件。
-`Tool` 继承物品基类 `Object`（`src/model/Objects/include/Object.h`），故工具是可持有的物品；其耐久以 `Tool::durability` 为准。
-
-***
-
-## 8. 依赖桩契约（协作接口）
-
-下列模块未实现，当前为 **header-only 占位桩**（队友实现后接口不变即可替换）：
-
-| 头文件                                        | 契约接口                                              | 说明         |
-| ------------------------------------------ | ------------------------------------------------- | ---------- |
-| `src/models/player/include/player.h`       | `spend_gold(int)` / `add_gold(int)` / `gold()`    | 工具升级/修复扣金币 |
-| `src/models/inventory/include/inventory.h` | `has_item(id,count)` / `remove_item` / `add_item` | 升级材料校验与消耗  |
-| `src/models/farm/include/farm.h`           | `auto_water()`                                    | 雨天自动浇水     |
-
-***
-
-## 9. 使用示例
-
-### 主循环接入（`GameController`）
+构造默认装配 3 件工具（下标对应 `ToolId`）。公开接口聚焦使用与查询：
 
 ```cpp
-mud::Farm farm;
-WeatherController weather(farm);
-// 每帧：
-weather.update(day, hour);
-
-// 种菜：产量用 weather.crop_loss_rate()，浇水看 weather.auto_water()
-// 钓鱼：if (weather.can_fish()) 钓，结算套 weather.fishing_penalty()
-// 采矿：经验用 weather.mining_exp_bonus()；每次产出调 weather.roll_mining_event(c, k)
+bool use_tool(ToolId id);       // 使用指定工具一次；损坏返回 false
+bool is_broken(ToolId id) const;
+int durability(ToolId id) const;
+int level_bonus(ToolId id) const;
+int level(ToolId id) const;
+std::string name(ToolId id) const;
 ```
 
-### 集市铁匠铺
+升级/修复留在 `Tool` 模型层（`upgrade` / `repair_fully`），控制器当前未透出；金币/背包校验接口尚未接入，属现状缺口。
+
+## 6. 采矿集成
+
+采矿控制器（`MiningController::produce`，`src/Controller/Mining_controller`）在每 tick 的每次产出依次执行：
+
+1. 事件判定：若注入了 `mud::event::EventSystem`，调用 `roll_mining_event(chest, cave, 1..100)`；塌方则清空本 tick 全部产出并中断会话，宝箱则本次产出 `quantity` 翻倍。
+2. 矿镐耐久：若注入了 `mud::tool::ToolController`，每次产出经 `use_tool(Pickaxe)` 扣 1 耐久；损坏则清空产出、结束会话。
+3. 经验结算：`经验 = 矿石经验 * (1 + ToolController::level_bonus(Pickaxe))`，等级 1 加成 0。
+
+`MiningController` 构造签名（`events`、`tools` 均允许 `nullptr`，此时跳过对应环节）：
 
 ```cpp
-mud::Player player;
-mud::Inventory inventory;
-ToolController tool(player, inventory);
-
-// 多件持有：开局再添一把矿镐，共 2 件
-tool.add_tool(ToolId::Pickaxe);
-std::size_t n = tool.tool_count(ToolId::Pickaxe);      // 2
-
-// 挖矿：自动选一件未损坏的；第一件耐久用尽自动换第二件，不必急着修
-bool ok = tool.use_tool(ToolId::Pickaxe);
-if (tool.is_broken(ToolId::Pickaxe))
-    std::printf("本类型全部损坏：%zu 件，请修复或再添置\n", tool.broken_count(ToolId::Pickaxe));
-
-bool up = tool.upgrade(ToolId::Hoe, /*slot=*/0);          // 升主件一级
-bool r  = tool.repair(ToolId::Pickaxe, /*use_ore=*/true, /*slot=*/0); // 用矿石修第 1 件
+MiningController(
+    const Ore::OreData&, const TimeService&,
+    const mud::event::EventSystem* events = nullptr,
+    mud::tool::ToolController* tools = nullptr);
 ```
 
-***
+集成行为由测试 `tests/mining_controller/event_tool/event_tool_test.cpp` 覆盖：宝箱/塌方边界、工具耐久与等级加成、矿镐损坏中断会话、事件注入不影响产出形态。
 
-## 10. 已知问题
+## 7. 命名空间与工程约定
 
-1. **中文编码**：含 UTF-8 中文的文件必须带 `/utf-8` 编译，否则 MSVC 按 GBK 读取会报错。
-2. **命名空间**：本系统统一 `mud::weather` / `mud::event` / `mud::tool`，与全项目 `mud` 风格一致。
+- 统一 `mud::event` / `mud::tool`，方法 snake_case，与全项目新的 `mud::` 模块风格一致。
+- 源文件含 UTF-8 中文，MSVC 编译需带 `/utf-8`（各模块 CMakeLists 已设置）。
+- 依赖注入一律经构造传入，跨模块不直接 include 对方具体头文件。
 
-> 采矿宝箱概率已对齐为 8%（`roll_mining_event` 中 `rand_chance >= 93`），数值以本文件 §4 为准。
+## 8. 现状缺口
 
+本文档描述之外，当前分支还有以下留白，未纳入任何构建目标：
+
+- 天气枚举与逐日预报（`weather.h`、`weather.cpp` 为空），以及 `WeatherController`（`weather_Controller.h/cpp`）。`weather_Controller.cpp` 中的 `farm_.autoWater()`、`time_.day()` / `time_.hour()` 与现有 `Farm` / `TimeService` 接口不一致，接入前需对齐（种菜子系统成型后由真实 `Farm` 提供自动浇水）。
+- 工具升级/修复链路：`ToolController` 未暴露 `upgrade` / `repair_fully`，也未接入金币与背包校验。
