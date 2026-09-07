@@ -16,6 +16,10 @@
 
 #include "time_service.h"
 
+// 前向声明事件与工具系统，避免头文件耦合；接入经构造注入，缺省为 nullptr。
+namespace mud::event { struct EventSystem; }
+namespace mud::tool  { class ToolController; }
+
 using namespace mud;
 
 #include <cstddef>
@@ -29,10 +33,14 @@ public:
      * @brief 构造采矿控制器。
      * @param ore_data     矿石数据源。
      * @param time_service 时间服务，用于推进时间。
+     * @param events       可选：采矿随机事件系统（缺省 nullptr，不启用宝箱/塌方）。
+     * @param tools        可选：工具控制器（缺省 nullptr，不启用矿镐耐久/等级加成）。
      */
     MiningController(
         const Ore::OreData& ore_data,
-        const TimeService& time_service
+        const TimeService& time_service,
+        const mud::event::EventSystem* events = nullptr,
+        mud::tool::ToolController* tools = nullptr
     );
 
     /**
@@ -92,8 +100,9 @@ private:
     std::vector<mining::MiningResult> produce(
         std::size_t layer_id,
         std::size_t count,
-        const mining::MiningContext& context
-    ) const;
+        const mining::MiningContext& context,
+        bool& interrupted
+    );
 
     /** @brief 依据目标层产出分布随机抽取一种矿石 ID。 */
     std::string random_ore(
@@ -104,6 +113,9 @@ private:
 private:
     const Ore::OreData& ore_data_;    // 矿石数据源（外部所有，兼容预留）
     const TimeService& time_service_; // 时间服务（外部所有）
+
+    const mud::event::EventSystem* events_; // 采矿随机事件（外部可选注入）
+    mud::tool::ToolController* tools_;      // 工具控制器（外部可选注入）
 
     Ore ore_table_;    // 矿石属性与产出分布查询（自 JSON 加载）
     Layer layer_table_; // 矿区层级/照明查询（自 JSON 加载）

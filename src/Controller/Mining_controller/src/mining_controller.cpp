@@ -9,6 +9,10 @@
 
 #include "mining_calculator.h"
 
+#include "event.h"
+#include "tool.h"
+#include "tool_Controller.h"
+
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -37,8 +41,11 @@ namespace
 
 MiningController::MiningController(
     const Ore::OreData& ore_data,
-    const TimeService& time_service
-) : ore_data_(ore_data), time_service_(time_service)
+    const TimeService& time_service,
+    const mud::event::EventSystem* events,
+    mud::tool::ToolController* tools
+) : ore_data_(ore_data), time_service_(time_service),
+    events_(events), tools_(tools)
 {
 }
 
@@ -80,7 +87,11 @@ std::vector<mining::MiningResult> MiningController::update(
     tick.advance(consumed);
     state.update_tick(tick);
 
-    return produce(*state.layer_id(), count, context);
+    bool interrupted = false;
+    auto results = produce(*state.layer_id(), count, context, interrupted);
+    if (interrupted)
+        state.stop(); // 塌方/工具损坏：清空本 tick 产出并中断会话
+    return results;
 }
 
 std::vector<mining::MiningResult> MiningController::stop_mining(
@@ -100,8 +111,9 @@ std::vector<mining::MiningResult> MiningController::stop_mining(
         MiningCalculator::calculate_production_count(elapsed, context.tool.interval);
 
     state.stop();
+    bool interrupted = false;
     return count == 0 ? std::vector<mining::MiningResult>{}
-                      : produce(layer, count, context);
+                      : produce(layer, count, context, interrupted);
 }
 
 bool MiningController::is_mining(const MiningState& state) const noexcept
@@ -161,22 +173,48 @@ bool MiningController::check_lighting(
 std::vector<mining::MiningResult> MiningController::produce(
     const std::size_t layer_id,
     const std::size_t count,
-    const mining::MiningContext& context
-) const
+    const mining::MiningContext& context,
+    bool& interrupted
+)
 {
     std::vector<mining::MiningResult> out;
     out.reserve(count);
+    interrupted = false;
 
     for (std::size_t i = 0; i < count; ++i)
     {
+        // 1. 事件判定：宝箱翻倍 / 塌方中断本 tick。
+        bool chest = false, cave = false;
+        if (events_)
+            events_->roll_mining_event(chest, cave,
+                static_cast<int>(rand_unit() * 100) + 1);
+        if (cave)
+        {
+            interrupted = true;
+            out.clear();
+            return out;
+        }
+
         const auto id = random_ore(layer_id, context);
         if (id.empty())
             continue;
 
         mining::MiningResult r;
         r.ore_id     = id;
-        r.experience = ore_table_.get_ore_mining_exp(id);
-        r.quantity   = 1;
+        r.quantity   = chest ? 2 : 1;  // 2. 宝箱：当次产出翻倍
+
+        // 3. 矿镐耐久：每次产出扣 1；损坏即中断。
+        if (tools_ && !tools_->use_tool(mud::tool::ToolId::Pickaxe))
+        {
+            interrupted = true;
+            out.clear();
+            return out;
+        }
+
+        // 4. 经验：baseExp * (1 + 矿镐等级加成)。
+        const int bonus = tools_ ? tools_->level_bonus(mud::tool::ToolId::Pickaxe) : 0;
+        r.experience = ore_table_.get_ore_mining_exp(id) * (1 + bonus);
+
         out.push_back(std::move(r));
     }
     return out;

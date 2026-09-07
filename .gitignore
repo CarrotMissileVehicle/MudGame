@@ -1,3 +1,6 @@
+# VS IDE 缓存（不应纳入版本控制）
+.vs/
+
 ### C++ template
 # Prerequisites
 *.d
@@ -55,6 +58,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+build_msvc/
 develop-eggs/
 dist/
 downloads/
@@ -216,6 +220,8 @@ cython_debug/
 workspace.code-workspace
 
 # --- CLion / CMake 构建产物 ---
+graphify-out/
+.code-review-graph/
 cmake-build-*/
 cmake-build-debug/
 build/

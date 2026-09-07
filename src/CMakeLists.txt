@@ -26,9 +26,7 @@ add_subdirectory(Controller/Player)      # player
 
 # ---- 工具 / 视图 ----
 add_subdirectory(Tool)                   # player_serializer
+add_subdirectory(Controller/Tool)        # tool_controller（工具模型/控制器）
+add_subdirectory(Controller/Weather)     # weather_controller（事件模型）
 add_subdirectory(View/Cmdparser)         # cmd_parser
 add_subdirectory(View/Statusview)        # statusview
-
-# ---- 占位模块（未实现依赖，暂不纳入构建）----
-# add_subdirectory(Controller/Tool)      # 依赖 tool.h/tools.h/player.h/inventory.h
-# add_subdirectory(Controller/Weather)   # 依赖 event.h/weather.h

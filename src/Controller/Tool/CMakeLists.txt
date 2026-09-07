@@ -1,9 +1,6 @@
-# tool_controller 库：工具控制器（Controller/Tool）。
-#
-# 注意：tool_Controller 依赖的 tool.h / tools.h / player.h / inventory.h
-# 均为尚未实现的占位头文件，故该模块暂不纳入构建（src/CMakeLists.txt 中已注释）。
-# 待占位依赖补齐后可恢复 add_subdirectory。
+# tool_controller 库：工具模型与控制器（mud::tool），自包含，无外部占位依赖。
 add_library(tool_controller
+    src/tool.cpp
     src/tool_Controller.cpp
 )
 
@@ -11,3 +8,8 @@ target_include_directories(tool_controller
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+# 源文件含 UTF-8 中文，MSVC 需显式 utf-8 否则按本机代码页(936)读取报错
+if(MSVC)
+    target_compile_options(tool_controller PRIVATE /utf-8)
+endif()

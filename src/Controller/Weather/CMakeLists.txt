@@ -1,10 +1,6 @@
-# weather_controller 库：天气与事件控制器（Controller/Weather）。
-#
-# 注意：weather_Controller 依赖的 event.h / weather.h 等占位头文件尚未实现，
-# 故该模块暂不纳入构建（src/CMakeLists.txt 中已注释）。
-# 已将其中的已删除 TimeSystem 引用改为 mud::TimeService（Timeservice 模块）。
+# weather_controller 库：事件模型（mud::event）。自包含。
 add_library(weather_controller
-    src/weather_Controller.cpp
+    src/event.cpp
 )
 
 target_include_directories(weather_controller
@@ -12,8 +8,7 @@ target_include_directories(weather_controller
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(weather_controller
-    PUBLIC
-        time_service
-        farm
-)
+# 源文件含 UTF-8 中文，MSVC 需显式 utf-8 否则按本机代码页(936)读取报错
+if(MSVC)
+    target_compile_options(weather_controller PRIVATE /utf-8)
+endif()
