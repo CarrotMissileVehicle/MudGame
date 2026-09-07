@@ -18,6 +18,13 @@ public:
     void add(const FarmLand& farmland);
     void tickAll(bool growFullSpeed);
 
+    // 对已占用的地块统一浇水（天气系统在雨天自动调用）
+    void autoWater() {
+        for (auto& farmland : farmlands) {
+            if (farmland.isOccupied()) farmland.water();
+        }
+    }
+
 private:
     std::vector<FarmLand> farmlands;
 };

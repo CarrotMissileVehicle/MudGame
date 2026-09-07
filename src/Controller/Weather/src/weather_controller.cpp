@@ -1,92 +1,113 @@
-/**
- * @file weather_Controller.cpp
- * @brief 天气与事件控制器实现。
- *
- * 实现主循环心跳的跨天天气生成与早 8 点事件触发，并转发天气/事件查询。
- */
-#include "weather_Controller.h"   // 实现这个头文件里声明的方法
-#include <vector>                 // 可变长数组类型
+#include "weather_controller.h"
 
-// ---- 构造函数实现 ----
-// 用初始化列表把依赖(引用)和两个"记录用"整数设好。
-// time_ / farm_ 是引用，必须用初始化列表绑定，不能在函数体里赋值。
-WeatherController::WeatherController(mud::TimeService& time, Farm& farm)
-    : time_(time), farm_(farm), lastWeatherDay_(0), lastEventDay_(0) {}
+#include <cstddef>
+#include <random>
 
-// ---- 每帧心跳：负责触发天气生成与事件判定 ----
-void WeatherController::update() {
-    checkNewDay();        // 1) 检查跨天→新一天生成天气
-    checkEventTrigger();  // 2) 检查是否到早8点→触发事件
-}
-
-// ---- 检查跨天并生成天气 ----
-bool WeatherController::checkNewDay() {
-    // 时间系统说"今天"还是我们上次生成时的那天 → 说明没跨天，直接返回 false
-    if (time_.day() == lastWeatherDay_) return false;
-    // 还没到早上6点(比如凌晨3点) → 仍算前一夜，不生成新天气
-    if (time_.hour() < 6) return false;
-
-    lastWeatherDay_ = time_.day();   // 记住今天的日期
-    weather_.generateDaily();        // 让天气对象按概率随机选一种当天天气
-
-    // 如果是雨天：自动帮农田浇一次水（调用农田系统的接口）
-    if (weather_.autoWater()) {
-        farm_.autoWater();
+namespace
+{
+    // 返回 1~100 的随机整数，供当日事件判定用
+    int roll_1_to_100()
+    {
+        static std::mt19937 gen(std::random_device{}());
+        std::uniform_int_distribution<int> dist(1, 100);
+        return dist(gen);
     }
-    return true;   // 表示确实跨天了
 }
 
-// ---- 检查早8点并触发事件 ----
-void WeatherController::checkEventTrigger() {
-    if (time_.day() == lastEventDay_) return;   // 今天触发过了，跳过
-    if (time_.hour() != 8) return;              // 没到早8点，跳过
-
-    lastEventDay_ = time_.day();   // 记住今天已触发，防止重复
-
-    // ---- 下面两个值目前是占位，等队友的时间/农田系统就绪后替换 ----
-    const bool neglectWater = false;  // 暂定"没有连续3天没浇水"
-    const int dayOfWeek = 1;          // 暂定今天是周一
-
-    events_.generateDailyEvents(dayOfWeek, neglectWater);  // 让事件对象按规则判定
+WeatherController::WeatherController(mud::TimeService& time, Farm& farm)
+    : time_(time), farm_(farm), last_weather_day_(-1), last_event_day_(-1)
+{
 }
 
-// ---- 以下全是简单的"转发"：把 Model 的查询结果原样交给调用方 ----
-WeatherType WeatherController::getWeather() const { return weather_.current(); }
+// ---- 主循环心跳：每帧调用 ----
+// 时间由 TimeService 唯一掌管（now_），本类只从 time_.now() 读当前时间驱动：
+//   1) 跨天（凌晨 6 点算新一天开始）→ 结算上一天浇水情况、生成当天天气、雨天自动浇水
+//   2) 早 8 点 → 触发当天随机事件（同日只触发一次）
+void WeatherController::update()
+{
+    const auto t = time_.now();
+    // 自纪元(0年1月1日)起的天序号：作为"今天是第几天/第几天"的稳定跨天判据（跨月/跨年都不会错判）
+    const long long day_index = t.total_minutes() / 1440;
+    const int hour = static_cast<int>(t.hour);
 
-std::string WeatherController::getWeatherName() const { return weather_.currentName(); }
+    // 1) 跨天：新的一天
+    if (day_index != last_weather_day_ && hour >= 6) {
+        // 上一天若无任何浇水（自动/手动都无）则计入未浇水天数，否则清零
+        if (!watered_today_) {
+            ++neglect_days_;
+        } else {
+            neglect_days_ = 0;
+        }
 
-bool WeatherController::canFish() const { return weather_.canFish(); }
-
-bool WeatherController::canGoOutside() const { return weather_.canGoOutside(); }
-
-bool WeatherController::autoWater() const { return weather_.autoWater(); }
-
-float WeatherController::cropLossRate() const { return weather_.cropLossRate(); }
-
-float WeatherController::miningExpBonus() const { return weather_.miningExpBonus(); }
-
-float WeatherController::fishingPenalty() const { return weather_.fishingPenalty(); }
-
-bool WeatherController::hasEvent(EventType type) const { return events_.hasEvent(type); }
-
-bool WeatherController::isTravelerActive() const { return events_.isTravelerActive(); }
-
-// 返回今天触发的所有"早8点类"事件的中文名，方便界面直接显示
-std::vector<std::string> WeatherController::todayEventNames() const {
-    std::vector<std::string> names;   // 建一个空的字符串列表
-    // 遍历配置表，找出"今天已触发"且"属于早8点类"的事件
-    for (int i = 0; i < kEventConfigCount; ++i) {
-        const EventConfig& cfg = kEventConfigs[i];
-        // "&&" 且：既是早8点类 又 今天触发了 才记录
-        if (cfg.scope == EventScope::DAILY_08 &&
-            events_.hasEvent(cfg.type)) {
-            names.push_back(cfg.name);   // push_back = 往列表末尾追加一个名字
+        last_weather_day_ = day_index;
+        weather_.generate_daily();
+        watered_today_ = weather_.auto_water();   // 雨天自动浇水 = 当天已浇水
+        if (weather_.auto_water()) {
+            farm_.autoWater();   // 雨天给农田自动浇水
         }
     }
-    return names;   // 把列表交回去
+
+    // 2) 早 8 点触发当天随机事件（同日只触发一次）
+    if (day_index != last_event_day_ && hour == 8) {
+        last_event_day_ = day_index;
+        const bool neglect_water = (neglect_days_ >= 3);   // 连续 3 天未浇水
+        event_.generate_daily_events(day_of_week(day_index), neglect_water, roll_1_to_100());
+    }
 }
 
-// 采矿随机事件：直接把事件系统判定的结果转发出去
-void WeatherController::rollMiningEvent(bool& foundChest, bool& caveIn) {
-    events_.rollMiningEvent(foundChest, caveIn);
+// 由天序号常态化为星期几：第 0 天视为周一(1)，周五(5) 时旅行商人 100% 在场。
+int WeatherController::day_of_week(long long day_index)
+{
+    return static_cast<int>((day_index % 7) + 1);
+}
+
+void WeatherController::mark_watered()
+{
+    watered_today_ = true;
+}
+
+// ---- 天气查询转发 ----
+mud::weather::WeatherType WeatherController::weather() const { return weather_.current(); }
+
+std::string WeatherController::weather_name() const { return weather_.current_name(); }
+
+bool WeatherController::can_fish() const { return weather_.can_fish(); }
+
+bool WeatherController::can_go_outside() const { return weather_.can_go_outside(); }
+
+bool WeatherController::auto_water() const { return weather_.auto_water(); }
+
+double WeatherController::crop_loss_rate() const { return weather_.crop_loss_rate(); }
+
+double WeatherController::mining_exp_bonus() const { return weather_.mining_exp_bonus(); }
+
+double WeatherController::fishing_penalty() const { return weather_.fishing_penalty(); }
+
+// ---- 事件查询转发 ----
+bool WeatherController::has_event(mud::event::EventType type) const
+{
+    return event_.has_event(type);
+}
+
+bool WeatherController::is_traveler_active() const
+{
+    return event_.is_traveler_active();
+}
+
+// 返回今天触发的所有"每日 08:00 类"事件中文名
+std::vector<std::string> WeatherController::today_event_names() const
+{
+    std::vector<std::string> names;
+    for (std::size_t i = 0; i < mud::event::kDailyEventConfigCount; ++i) {
+        const auto& cfg = mud::event::kDailyEventConfigs[i];
+        if (event_.has_event(cfg.type)) {
+            names.emplace_back(cfg.name);
+        }
+    }
+    return names;
+}
+
+void WeatherController::roll_mining_event(bool& found_chest, bool& cave_in)
+{
+    event_.roll_mining_event(found_chest, cave_in, roll_1_to_100());
 }
