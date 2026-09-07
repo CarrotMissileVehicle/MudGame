@@ -6,6 +6,7 @@
 #include <vector>
 #include "Object.h"
 #include "Shop.h"
+#include "Time.h"
 
 // 集市系统：管理商店交易、供需波动与集市日历。
 // 为避免依赖尚未实现的 Player / Inventory，交易操作通过
@@ -24,6 +25,8 @@ public:
 
     // 进入新的一天，根据星期/日期推进日历并刷新价格浮动
     void onNewDay(int week, int day);
+    // 从游戏时间对接：由 Time::day 推出星期(1-7)与日期(1-30)再进入新的一天
+    void onNewDay(const Time& time);
 
     // ---- 商店管理 ----
     void registerShop(const Shop& shop);

@@ -57,6 +57,7 @@ target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser cli11
 
 target_include_directories(MudGame PRIVATE
         src/model/Objects/include
+        src/model/Time/include
         src/Controller/Food/include
         src/Controller/Crop/include
         src/Controller/Fertilizer/include

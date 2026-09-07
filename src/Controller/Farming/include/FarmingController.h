@@ -6,6 +6,7 @@
 #include "Farm.h"
 #include "Crop.h"
 #include "Fertilizer.h"
+#include "Time.h"
 
 class FarmingController
 {
@@ -19,7 +20,8 @@ public:
     bool waterAll();
     bool fertilize(std::size_t index, Fertilizer* fertilizer);
     int harvest(std::size_t index);
-    void tick(bool isDaytime);
+    // 按游戏时间推进作物生长：白天(06-18点)全速，夜间减半
+    void tick(const Time& time);
     std::size_t farmSize() const;
 
 private:

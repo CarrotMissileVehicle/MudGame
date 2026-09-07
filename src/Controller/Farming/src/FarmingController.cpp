@@ -35,8 +35,11 @@ int FarmingController::harvest(std::size_t index) {
     return farm->getFarmland(index).harvest();
 }
 
-void FarmingController::tick(bool isDaytime) {
-    if (farm != nullptr) farm->tickAll(isDaytime);
+void FarmingController::tick(const Time& time) {
+    if (farm == nullptr) return;
+    // 06:00 - 18:00 为白天，作物全速生长；夜间减半
+    bool isDaytime = (time.hour >= 6 && time.hour < 18);
+    farm->tickAll(isDaytime);
 }
 
 std::size_t FarmingController::farmSize() const {

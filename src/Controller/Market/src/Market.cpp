@@ -29,6 +29,13 @@ void Market::onNewDay(int week, int day) {
     updateFluctuations();
 }
 
+void Market::onNewDay(const Time& time) {
+    // 由累计天数推出星期(1-7)与日期(1-30)
+    int week = ((time.day - 1) % 7) + 1;
+    int day  = ((time.day - 1) % 30) + 1;
+    onNewDay(week, day);
+}
+
 void Market::registerShop(const Shop& shop) {
     shops.push_back(shop);
 }
@@ -131,7 +138,7 @@ bool Market::buy(const std::string& shopId, Object* item,
 }
 
 int Market::sell(Object* item, int count, int& gold) {
-    if (item == nullptr || count <= 0) return 0;
+     if (item == nullptr || count <= 0) return 0;
     int price = getSellPrice(item);
     if (price <= 0) return 0;
     int total = price * count;
