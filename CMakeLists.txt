@@ -1,3 +1,12 @@
+# =====================================================================
+# MudGame 顶层 CMake 构建脚本
+# ---------------------------------------------------------------------
+# 职责：
+#   1. 声明 C++23 标准与构建要求
+#   2. 通过 FetchContent 拉取头文件库 CLI11（用于命令行解析）
+#   3. 引入 src 子目录并构建可执行目标 MudGame
+#
+# =====================================================================
 cmake_minimum_required(VERSION 4.0)
 project(MudGame)
 
@@ -16,7 +25,22 @@ FetchContent_Declare(cli11
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(cli11)
 
+# pjh_json：矿石/矿区 JSON 数据解析库。关闭其激进优化
+# (-march=native/-ffast-math/-flto) 传播，避免污染全工程。
+set(PJH_JSON_ENABLE_OPTIMIZATIONS OFF CACHE BOOL "Disable pjh_json aggressive opts" FORCE)
+FetchContent_Declare(pjh_json
+    GIT_REPOSITORY https://github.com/pjh456/pjh_json.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(pjh_json)
+
 add_subdirectory(src)
+
+# ---- 单元测试（CTest 开关控制，默认开启）----
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 # objects 库：游戏物品基类模块（Object），供 mining_controller / cmd_parser / MudGame 链接。
 add_library(objects src/model/Objects/src/Object.cpp)
