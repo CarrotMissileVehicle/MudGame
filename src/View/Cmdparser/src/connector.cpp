@@ -3,6 +3,7 @@
  * @brief 命令派发器实现。
  *
  * 实现 verb→handler 的注册、大小写不敏感的查找与派发逻辑。
+ * 交互模式下自动查 schema → 调用 ParameterCollector → 执行 handler。
  */
 #include "connector.h"
 #include "input_parser.h"
@@ -28,10 +29,31 @@ void Connector::bind(std::string verb, Handler handler)
 }
 
 /**
- * @brief 派发命令到对应的处理器执行。
- * @param command 待执行命令。
- * @param ctx     透传给处理器的运行时上下文。
- * @return 处理器返回的结果；未命中时返回 UnknownCommand。
+ * @brief 注册命令参数 Schema（交互模式下使用）。
+ * @param verb   命令动词，保存前统一转为小写。
+ * @param schema 参数定义。
+ */
+void Connector::register_schema(std::string verb, mud::cmd::CommandSchema schema)
+{
+    std::transform(verb.begin(), verb.end(), verb.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    schemas_[std::move(verb)] = std::move(schema);
+}
+
+/**
+ * @brief 设置交互式参数收集器。
+ * @param collector 参数收集器指针（可为 nullptr 表示禁用交互收集）。
+ */
+void Connector::set_collector(ParameterCollector* collector)
+{
+    collector_ = collector;
+}
+
+/**
+ * @brief 派发命令到对应的处理器执行（交互模式）。
+ *
+ * 流程：统一小写 verb → 查 schema → 若有 schema 且 collector 可用，
+ * 调用 collector 收集缺失参数 → 查 handler → 执行。
  */
 HandlerResult Connector::dispatch(const mud::cmd::Command& command,
                                   const HandlerContext& ctx) const
@@ -40,17 +62,43 @@ HandlerResult Connector::dispatch(const mud::cmd::Command& command,
     std::string verb = command.verb;
     std::transform(verb.begin(), verb.end(), verb.begin(),
                    [](unsigned char c) { return std::tolower(c); });
-    auto it = handlers_.find(verb);
-    if (it == handlers_.end()) return HandlerResult::UnknownCommand;
-    return it->second(command, ctx);
+
+    // 查找 handler
+    auto handler_it = handlers_.find(verb);
+    if (handler_it == handlers_.end()) return HandlerResult::UnknownCommand;
+
+    // 交互模式：若有 schema 且 collector 可用，收集缺失参数
+    mud::cmd::Command cmd = command; // 允许修改副本
+    auto schema_it = schemas_.find(verb);
+    if (schema_it != schemas_.end() && collector_)
+    {
+        if (!collector_->collect(schema_it->second, cmd))
+            return HandlerResult::Failed; // 用户取消
+    }
+
+    return handler_it->second(cmd, ctx);
 }
 
 /**
  * @brief 判断指定 verb 是否已注册处理器。
- * @param verb 命令动词。
- * @return 已注册返回 true，否则返回 false。
  */
 bool Connector::has(std::string_view verb) const
 {
     return handlers_.find(std::string(verb)) != handlers_.end();
+}
+
+/**
+ * @brief 判断指定 verb 是否已注册 schema。
+ */
+bool Connector::has_schema(std::string_view verb) const
+{
+    return schemas_.find(std::string(verb)) != schemas_.end();
+}
+
+/**
+ * @brief 获取已注册的 schema（用于生成帮助文本）。
+ */
+const mud::cmd::CommandSchema& Connector::get_schema(std::string_view verb) const
+{
+    return schemas_.at(std::string(verb));
 }

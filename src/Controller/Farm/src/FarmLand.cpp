@@ -35,7 +35,10 @@ bool FarmLand::water() {
 void FarmLand::fertilize(int speedUp) {
     // speedUp: 剩余生长周期的加速除数（2 减半，3 减为 1/3）
     if (!occupied || speedUp <= 0) return;
+    if (growthStage >= crop->getGrowthCycle()) return; // 已成熟，施肥不再叠加
     growthStage += growthStage / speedUp;
+    if (growthStage > crop->getGrowthCycle()) // 钳制到生长周期上限
+        growthStage = crop->getGrowthCycle();
 }
 
 int FarmLand::harvest() {
@@ -53,4 +56,6 @@ void FarmLand::tickGrow(bool growFullSpeed) {
     if (!occupied) return;
     if (!watered) return; // 未浇水不生长（浇水由玩家手动或雨天自动进行）
     growthStage += growFullSpeed ? 2 : 1;
+    if (growthStage > crop->getGrowthCycle()) // 钳制到生长周期上限，避免超出显示
+        growthStage = crop->getGrowthCycle();
 }

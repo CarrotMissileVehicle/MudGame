@@ -147,3 +147,31 @@ mud::cmd::Command InputParser::parse(const std::string& line)
 
 /** @brief 返回 CLI11 生成的完整帮助文本。 */
 std::string InputParser::help_text() const { return app_.help(); }
+
+/**
+ * @brief 交互模式：仅从输入行提取 verb，忽略后续参数。
+ *
+ * 取第一个非空白 token 作为 verb，其余丢弃。空行返回空字符串。
+ * 不做 schema 校验——参数由 ParameterCollector 逐个交互收集。
+ *
+ * 空白包括空格 / 制表符 / 换行符 / 回车符。
+ */
+std::string InputParser::parse_verb_only(const std::string& line) const
+{
+    const auto is_ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+    };
+
+    // 跳过前导空白
+    std::size_t start = 0;
+    while (start < line.size() && is_ws(line[start]))
+        ++start;
+    if (start >= line.size()) return {};
+
+    // 提取到第一个空白
+    std::size_t end = start;
+    while (end < line.size() && !is_ws(line[end]))
+        ++end;
+
+    return line.substr(start, end - start);
+}

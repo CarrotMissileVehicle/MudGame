@@ -2,10 +2,10 @@
  * @file connector.h
  * @brief 命令派发器（Connector）及其伴随类型定义。
  *
- * 数据流总览：
- *   line → InputParser::parse → Command(点分 verb)
- *        → Connector::dispatch → (按 verb 查表) → 领域 handler
- *        → HandlerResult → main 打印反馈
+ * 数据流总览（交互模式）：
+ *   line → InputParser::parse_verb_only → verb
+ *        → Connector::dispatch → 查 schema → ParameterCollector 逐参数提示
+ *        → Command(options 已填充) → handler → HandlerResult → main 打印反馈
  *
  * 依赖：time_service、mining_handler、input_parser。
  */
@@ -43,22 +43,41 @@ using Handler = std::function<
 /**
  * @brief 命令派发器：维护 verb → handler 的映射表并负责命令路由。
  *
- * 通过 bind() 注册处理器，dispatch() 依据命令的点分 verb 查找并执行。
+ * 交互模式下：dispatch 自动查 schema → 调用 ParameterCollector 收集参数 → 再执行 handler。
  */
 class Connector
 {
 private:
     std::unordered_map<std::string, Handler> handlers_; // verb → handler 映射
+    std::unordered_map<std::string, mud::cmd::CommandSchema> schemas_; // verb → 参数 schema
+    ParameterCollector* collector_ = nullptr; // 交互式参数收集器（外部注入）
 
 public:
-    /** @brief 绑定指定命令 verb 到处理器回调。 */
+    /** @brief 注册命令处理器。 */
     void bind(std::string verb, Handler handler);
 
-    /** @brief 按命令 verb 派发执行，未命中时返回 UnknownCommand。 */
+    /** @brief 注册命令参数 Schema（交互模式下使用）。 */
+    void register_schema(std::string verb, mud::cmd::CommandSchema schema);
+
+    /** @brief 设置交互式参数收集器。 */
+    void set_collector(ParameterCollector* collector);
+
+    /**
+     * @brief 按命令 verb 派发执行（交互模式）。
+     *
+     * 若已注册 schema，自动调用 ParameterCollector 收集缺失参数后再执行 handler。
+     * 未命中时返回 UnknownCommand。
+     */
     HandlerResult dispatch(
         const mud::cmd::Command& command,
         const HandlerContext& ctx) const;
 
     /** @brief 查询指定 verb 是否已有绑定的处理器。 */
     bool has(std::string_view verb) const;
+
+    /** @brief 查询指定 verb 是否已注册 schema。 */
+    bool has_schema(std::string_view verb) const;
+
+    /** @brief 获取已注册的 schema（用于生成帮助文本）。 */
+    const mud::cmd::CommandSchema& get_schema(std::string_view verb) const;
 };

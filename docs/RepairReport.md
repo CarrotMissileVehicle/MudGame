@@ -188,3 +188,36 @@
 | `cmdparser_semantic_test`（+3 用例） | save/load、blacksmith.status、blacksmith.repair 必填参数 |
 
 - 完成后各阶段报告已按顺序在本文件末尾依次追加。
+
+---
+
+## 阶段 11：重构输入系统——交互式参数收集
+
+### ① 初始输入仅为行为名称，单独询问每一个参数
+
+**方案**：新增 `CommandSchema`（命令参数定义）与 `ParameterCollector`（交互式参数收集器）。用户输入仅限行为名称（如 `farm.sow`），随后系统对每个参数**单独输出动态提示**并逐项读取输入；不再使用 `--option value` 命令行式输入。
+
+**修改**：
+- `src/View/Cmdparser/include/input_parser.h`：
+  - 新增 `mud::cmd::ParameterDef`（参数名 / 提示文本 / 是否必填 / 默认值）与 `mud::cmd::CommandSchema`（命令描述 + 参数列表）。
+  - 新增 `InputParser::parse_verb_only(line)`：仅从输入行提取首个非空白 token 作为 verb，忽略其余内容（不再要求 `--option` 语法）。
+  - 新增 `ParameterCollector` 类：按 Schema 逐个输出提示并读取输入，支持默认值（直接回车）、必填重试、可选跳过（无默认值则回车跳过）、取消（输入 `q`）。
+- `src/View/Cmdparser/src/parameter_collector.cpp`：新文件，实现 `ParameterCollector::collect`（默认输入源自动剥离残留 `\r`）。签名兼容 `Renderer` 注入，输出统一走 Renderer。
+- `src/View/Cmdparser/include/connector.h` / `src/connector.cpp`：
+  - 新增 `register_schema(verb, schema)` / `set_collector` / `has_schema` / `get_schema`。
+  - `dispatch` 改为：查 schema → 若有 schema 且 collector 可用 → 调用 `collect` 收集缺失参数 → 再执行 handler；用户取消（输入 q）返回 `Failed` 且不执行 handler。
+- `src/View/Cmdparser/CMakeLists.txt`：收录 `parameter_collector.cpp`；PUBLIC 链接 `view_primitives`（获取 `Renderer`）。
+- `main.cpp`：
+  - 为所有带参命令注册 Schema：`mine.start`（layer）、`time.scale`（factor）、`farm.sow`（plot+crop）、`farm.water`（plot）、`farm.fertilize`（plot+type）、`farm.harvest`（plot）、`market.buy`（shop+item+count[默认1]）、`market.sell`（item+count[默认1]）、`blacksmith.repair`（tool+method）。
+  - 动态提示在注册时从游戏状态生成（如 `地块索引(0-3)`、`作物名(cabbage/carrot/tomato/pumpkin/lingzhi)`）。
+  - 主循环改用 `parse_verb_only` + Connector 自动收集参数；`connector.set_collector(&paramCollector)` 接线。
+
+### ② 更改相关提示系统
+
+- `main.cpp` 的 `input_hint`：从“列出含 `--option` 的完整语法”改为“仅列出行动名称 + 中文说明”（如 `farm.sow —— 播种`）。
+- `help` 展示改为行动名称清单（附参数说明），不再使用 CLI11 生成的带选项帮助文本。
+- 欢迎语改为“输入行动名称即可，系统会逐个提示所需参数”。
+
+**验证**：新增 `tests/cmdparser/interactive/interactive_input_test.cpp` 并注册 `cmdparser_interactive_test`（15 用例）：`parse_verb_only`（提取/忽略参数/空白/首 token）、收集器（逐参数、提示文本渲染、默认值、可选跳过、取消、必填重试、跳过已提供选项）、Connector 交互派发（收集后透传 handler、取消不执行 handler、无 schema 直派、`has_schema` 查询）。
+`ctest` **27/27 通过**；构建全部目标通过，`MudGame.exe` 正常链接。
+冒烟（管道输入真实运行）：`farm.sow` → 逐一提示 `地块索引(0-3)：` / `作物名(...)：` → 播种成功；`market.buy` → 依次提示 shop/item/count → 购入成功；参数处输入 `q` 静默取消并返回提示符；位置门控（不在农田播种提示“你不在农田”“你不在城镇”等）与既有语义一致。
