@@ -264,3 +264,6 @@ graphify-out/
 .graphify_*
 code-graph/
 
+# --- 本地缺陷分析报告（不上传 GitHub）---
+docs/defect_analysis_report.md
+
