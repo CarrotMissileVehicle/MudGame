@@ -111,3 +111,31 @@ TEST(InputParserSemantic, OreTargetsResolveWithoutCrash)
     EXPECT_NO_THROW({ (void)parse_verb("mine copper"); });
     EXPECT_NO_THROW({ (void)parse_verb("mine iron"); });
 }
+
+// 存档/读档与铁匠铺子命令识别
+TEST(InputParserSemantic, SaveAndLoadVerbs)
+{
+    EXPECT_EQ(parse_verb("save"), "save");
+    EXPECT_EQ(parse_verb("load"), "load");
+    const Command c = InputParser{}.parse("load");
+    EXPECT_TRUE(c.options.empty());
+}
+
+TEST(InputParserSemantic, BlacksmithStatusVerb)
+{
+    EXPECT_EQ(parse_verb("blacksmith.status"), "blacksmith.status");
+}
+
+TEST(InputParserSemantic, BlacksmithRepairRequiresToolAndMethod)
+{
+    // 缺任一带 -- 选项 → 语义拒绝（error）
+    EXPECT_EQ(parse_verb("blacksmith.repair --tool hoe"), "error");
+    EXPECT_EQ(parse_verb("blacksmith.repair --method ore"), "error");
+    // 完整参数被识别并保留
+    const Command c = InputParser{}.parse("blacksmith.repair --tool hoe --method ore");
+    EXPECT_EQ(c.verb, "blacksmith.repair");
+    EXPECT_EQ(c.options.at("tool"), "hoe");
+    EXPECT_EQ(c.options.at("method"), "ore");
+    // 缺省 count 的 --method 同段校验：非法值在业务层拦截（此处仅论证不崩溃）
+    EXPECT_NO_THROW({ (void)parse_verb("blacksmith.repair --tool pickaxe --method gold"); });
+}

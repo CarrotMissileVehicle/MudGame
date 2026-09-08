@@ -52,4 +52,6 @@ private:
     std::string shop_;        // --shop 商店 ID
     std::string item_;        // --item 物品名
     std::size_t count_{1};    // --count 数量（默认 1）
+    std::string tool_;        // --tool 工具名（hoe/rod/pickaxe）
+    std::string method_;      // --method 修复方式（ore/gold）
 };

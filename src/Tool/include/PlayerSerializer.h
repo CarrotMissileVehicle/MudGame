@@ -5,14 +5,19 @@
 #ifndef MUDGAME_PLAYERSERIALIZER_H
 #define MUDGAME_PLAYERSERIALIZER_H
 
+#include <cstdint>
 #include <string>
 #include "../../Controller/Player/include/Player.h"
 #include "../../Controller/Game/include/Game.h"
+#include "../../Controller/Tool/include/tool_controller.h"
 
 class PlayerSerializer {
 public:
-    bool Save(const std::string& filename, const Player& player, const Game& game);
-    bool Load(const std::string& filename, Player& player, Game& game);
+    // 完整存档：玩家 + 游戏会话 + 金币 + 工具状态 + 游戏内时钟总分钟数
+    bool Save(const std::string& filename, const Player& player, const Game& game, int gold,
+              const mud::tool::ToolController& tools, std::int64_t totalGameMinutes);
+    bool Load(const std::string& filename, Player& player, Game& game, int& gold,
+              mud::tool::ToolController& tools, std::int64_t& totalGameMinutes);
 
     bool Save(const std::string& filename, const Player& player);
     bool Load(const std::string& filename, Player& player);

@@ -41,6 +41,30 @@ namespace mud::tool
         /** 修复满耐久。 */
         void repair_fully();
 
+        /** 当前耐久是否为满（无需修复）。 */
+        bool is_full() const;
+
+        /** 设置等级（读档还原，夹取到 [1, max_level]）。 */
+        void set_level(int level);
+
+        /** 设置耐久（读档还原，夹取到 [0, max_durability]）。 */
+        void set_durability(int durability);
+
+        /** 修复所需矿石名（配置表）。 */
+        std::string repair_ore() const;
+
+        /** 修复所需矿石数量（配置表）。 */
+        int repair_ore_count() const;
+
+        /** 修复基准金币（配置表，按损耗比例折算）。 */
+        int repair_base_gold() const;
+
+        /** 金币修复当前损耗折算费用（按损耗占比向上取整；满耐久为 0）。 */
+        int gold_repair_cost() const;
+
+        /** 矿石修复折算费用（金币费用向上取整减半）。 */
+        int ore_repair_cost() const;
+
     private:
         ToolId id_;
         int level_;

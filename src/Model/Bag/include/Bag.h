@@ -13,6 +13,12 @@ public:
     Bag() = default;
     ~Bag();
 
+    // 深拷贝语义：复制堆叠对象（共享指针会引发双重释放）
+    Bag(const Bag& other);
+    Bag& operator=(const Bag& other);
+    Bag(Bag&& other) noexcept;
+    Bag& operator=(Bag&& other) noexcept;
+
     // 入包时同名物品自动堆叠合并（数量累加到已存在的堆叠上）
     void AddObject(Object* obj);
     // 不做堆叠合并直接入包：读档还原已聚合堆叠时使用

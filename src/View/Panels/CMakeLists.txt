@@ -9,6 +9,7 @@ add_library(view_panels
     src/MiningPanel.cpp
     src/MarketPanel.cpp
     src/ToolsPanel.cpp
+    src/BlacksmithPanel.cpp
     src/WeatherPanel.cpp
     src/HelpScreen.cpp
     src/MessagePanel.cpp

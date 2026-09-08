@@ -41,4 +41,45 @@ namespace mud::tool
     {
         return tools_[static_cast<int>(id)].name();
     }
+
+    int ToolController::max_durability(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].max_durability();
+    }
+
+    bool ToolController::is_full(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].is_full();
+    }
+
+    void ToolController::repair_full(const ToolId id)
+    {
+        tools_[static_cast<int>(id)].repair_fully();
+    }
+
+    int ToolController::gold_repair_cost(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].gold_repair_cost();
+    }
+
+    int ToolController::ore_repair_cost(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].ore_repair_cost();
+    }
+
+    std::string ToolController::repair_ore(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].repair_ore();
+    }
+
+    int ToolController::repair_ore_count(const ToolId id) const
+    {
+        return tools_[static_cast<int>(id)].repair_ore_count();
+    }
+
+    void ToolController::restore(const ToolId id, int level, int durability)
+    {
+        tools_[static_cast<int>(id)].set_level(level);
+        tools_[static_cast<int>(id)].set_durability(durability);
+    }
 }
