@@ -28,6 +28,40 @@ InputParser::InputParser()
     auto* scale = app_.add_subcommand("time.scale", "设置时间倍率");
     scale->add_option("--factor", factor_, "时间倍率")->required();
 
+    app_.add_subcommand("player.status", "查看玩家状态");
+
+    for (const char* dir : {"up", "down", "left", "right"}) {
+        app_.add_subcommand("move." + std::string(dir), std::string("向") + dir + "移动");
+    }
+
+    app_.add_subcommand("farm.status", "查看农田状态");
+    auto* sow = app_.add_subcommand("farm.sow", "播种");
+    sow->add_option("--plot", plot_, "地块索引(0起)")->required();
+    sow->add_option("--crop", crop_, "作物名(cabbage/carrot/tomato/pumpkin/lingzhi)")->required();
+    auto* water = app_.add_subcommand("farm.water", "浇水");
+    water->add_option("--plot", plot_, "地块索引(0起)")->required();
+    auto* fert = app_.add_subcommand("farm.fertilize", "施肥");
+    fert->add_option("--plot", plot_, "地块索引(0起)")->required();
+    fert->add_option("--type", fert_type_, "肥料类型(normal/advanced)")->required();
+    auto* harvest = app_.add_subcommand("farm.harvest", "收割");
+    harvest->add_option("--plot", plot_, "地块索引(0起)")->required();
+
+    app_.add_subcommand("fish.status", "查看钓鱼情况");
+    app_.add_subcommand("fish.tick", "尝试钓鱼");
+
+    app_.add_subcommand("weather.now", "查看今日天气");
+
+    app_.add_subcommand("market.status", "查看集市行情");
+    auto* buy = app_.add_subcommand("market.buy", "从商店购买");
+    buy->add_option("--shop", shop_, "商店ID(seed/grocery)")->required();
+    buy->add_option("--item", item_, "物品名")->required();
+    buy->add_option("--count", count_, "购买数量")->default_str("1");
+    auto* sell = app_.add_subcommand("market.sell", "向集市出售背包物品");
+    sell->add_option("--item", item_, "物品名")->required();
+    sell->add_option("--count", count_, "出售数量")->default_str("1");
+
+    app_.add_subcommand("tools.status", "查看工具耐久");
+
     app_.add_subcommand("help", "显示帮助");
     app_.add_subcommand("quit", "退出游戏");
     app_.add_subcommand("save", "保存游戏");

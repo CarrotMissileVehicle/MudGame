@@ -1,8 +1,8 @@
 /**
- * @file tool_Controller.cpp
+ * @file tool_controller.cpp
  * @brief 工具控制器实现（mud::tool）。
  */
-#include "tool_Controller.h"
+#include "tool_controller.h"
 
 namespace mud::tool
 {

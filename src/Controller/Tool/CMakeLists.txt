@@ -1,7 +1,7 @@
 # tool_controller 库：工具模型与控制器（mud::tool），自包含，无外部占位依赖。
 add_library(tool_controller
     src/tool.cpp
-    src/tool_Controller.cpp
+    src/tool_controller.cpp
 )
 
 target_include_directories(tool_controller

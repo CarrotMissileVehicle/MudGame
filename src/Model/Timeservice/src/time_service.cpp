@@ -76,6 +76,13 @@ void mud::TimeService::update()
     for (const auto& d : due) d.cb();
 }
 
+// 直接跳进指定分钟数（世界推进用）：清空亚分钟余数，不触发定时回调
+void mud::TimeService::advance(std::int64_t minutes)
+{
+    now_.advance(minutes);
+    sub_minute_ = 0.0;
+}
+
 // 直接设置当前游戏时间，并清空亚分钟余数
 void mud::TimeService::set_time(time::GameDateTime t)
 {

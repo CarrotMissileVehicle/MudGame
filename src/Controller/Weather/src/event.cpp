@@ -5,39 +5,13 @@
 
 namespace mud::event
 {
-    namespace
-    {
-        // 事件概率配置（proj.md）：以 1~100 的随机整数判定
-        struct DailyProb
-        {
-            EventType type;
-            int chance_percent;   // 触发概率（0-100）
-        };
-
-        const DailyProb kDailyProb[] = {
-            { EventType::Storm,   8 },
-            { EventType::Typhoon, 3 },
-            { EventType::Rain,    20 },
-        };
-        const std::size_t kDailyProbCount = sizeof(kDailyProb) / sizeof(kDailyProb[0]);
-    }
-
-    void EventSystem::generate_daily_events(int day_of_week, bool neglect_water, int rand_chance)
+    void EventSystem::generate_daily_events(int day_of_week, bool neglect_water)
     {
         active_.clear();
 
-        // 概率类事件采用"加权轮盘"：把暴风雨/台风/小雨按概率累积成一段段区间，
-        // rand_chance(1-100) 落在哪段就触发哪一类——每天 08:00 至多触发一个自然事件，
-        // 避免多个事件共用同一随机数造成互斥与概率失真。
-        // 累积区间：暴风雨 8% (1-8)、台风 3% (9-11)、小雨 20% (12-31)
-        int acc = 0;
-        for (std::size_t i = 0; i < kDailyProbCount; ++i) {
-            acc += kDailyProb[i].chance_percent;
-            if (rand_chance > 0 && rand_chance <= acc) {
-                active_.insert(kDailyProb[i].type);
-                break;
-            }
-        }
+        // 说明：暴风雨/台风/小雨已由天气系统（mud::weather）统一处理，
+        // 不再在事件系统中重复触发生成，避免"同一天双轨报道同一场雨/风"。
+        // 事件系统每日只保留与天气无关的独立事件。
 
         // 虫害：累计 3 天未浇水 → 独立于自然事件触发
         if (neglect_water) active_.insert(EventType::Pest);
@@ -56,7 +30,7 @@ namespace mud::event
         return has_event(EventType::Traveler);
     }
 
-    void EventSystem::roll_mining_event(bool& found_chest, bool& cave_in, int rand_chance)
+    void EventSystem::roll_mining_event(bool& found_chest, bool& cave_in, int rand_chance) const
     {
         // 矿洞塌方：5%（rand_chance < 5，即 1-4）
         cave_in = (rand_chance < 5);

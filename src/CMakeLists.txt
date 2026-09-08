@@ -8,7 +8,6 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # ---- 基础物品 / 模型 ----
-# objects 由顶层 CMakeLists.txt 定义，此处不再 add_subdirectory(Objects)
 add_subdirectory(Model/Timeservice)      # time_service
 add_subdirectory(Model/Objects)          # model_objects（Object 富接口）
 add_subdirectory(Model/Bag)              # bag
@@ -16,7 +15,7 @@ add_subdirectory(Model/Map)              # map
 add_subdirectory(Model/Playerstates)     # playerstates
 
 # ---- 控制器 ----
-add_subdirectory(Controller/Objects)     # controller_objects（Object 默认构造）
+add_subdirectory(Controller/Food)        # food（食物基类，供 crop/fish 依赖）
 add_subdirectory(Controller/Crop)        # crop
 add_subdirectory(Controller/Fertilizer)  # fertilizer
 add_subdirectory(Controller/Farm)        # farm
@@ -28,5 +27,4 @@ add_subdirectory(Controller/Player)      # player
 add_subdirectory(Tool)                   # player_serializer
 add_subdirectory(Controller/Tool)        # tool_controller（工具模型/控制器）
 add_subdirectory(Controller/Weather)     # weather_controller（事件模型）
-add_subdirectory(View/Cmdparser)         # cmd_parser
-add_subdirectory(View/Statusview)        # statusview
+add_subdirectory(View)                   # view_primitives + view_panels + cmd_parser

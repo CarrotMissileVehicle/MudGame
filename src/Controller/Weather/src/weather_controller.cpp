@@ -51,7 +51,7 @@ void WeatherController::update()
     if (day_index != last_event_day_ && hour == 8) {
         last_event_day_ = day_index;
         const bool neglect_water = (neglect_days_ >= 3);   // 连续 3 天未浇水
-        event_.generate_daily_events(day_of_week(day_index), neglect_water, roll_1_to_100());
+        event_.generate_daily_events(day_of_week(day_index), neglect_water);
     }
 }
 

@@ -1,4 +1,4 @@
-# fertilizer 库：肥料体系（仅头文件）。依赖物品基类 controller_objects。
+# fertilizer 库：肥料体系（仅头文件）。依赖物品基类 model_objects。
 add_library(fertilizer INTERFACE)
 
 target_include_directories(fertilizer
@@ -8,5 +8,5 @@ target_include_directories(fertilizer
 
 target_link_libraries(fertilizer
     INTERFACE
-        controller_objects
+        model_objects
 )

@@ -14,6 +14,9 @@ FetchContent_Declare(googletest
 FetchContent_MakeAvailable(googletest)
 
 # ---- 按模块聚合各测试目标 ----
+add_subdirectory(bag)
 add_subdirectory(cmdparser)
 add_subdirectory(timeservice)
 add_subdirectory(mining_controller)
+add_subdirectory(view)
+add_subdirectory(weather)

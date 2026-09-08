@@ -17,7 +17,7 @@
 
 #include "event.h"
 #include "tool.h"
-#include "tool_Controller.h"
+#include "tool_controller.h"
 
 using namespace mud;
 

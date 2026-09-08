@@ -35,16 +35,16 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
     file << "totalPlaySeconds=" << totalPlaySeconds << "\n";
 
     const auto& bag = player.GetBag();
-    auto itemNames = bag.GetAllObjectName();
-    file << "bagCount=" << itemNames.size() << "\n";
+    const auto* objectsPtr = &bag.GetObjects();
+    file << "bagCount=" << objectsPtr->size() << "\n";
 
-    const auto& objects = bag.GetObjects();
-    for (const auto* obj : objects) {
+    for (const auto* obj : *objectsPtr) {
         file << "item=" << obj->GetName() << "|"
              << obj->GetDescription() << "|"
              << obj->GetHealth() << "|"
              << obj->GetSellingPrice() << "|"
-             << obj->GetBuyingPrice() << "\n";
+             << obj->GetBuyingPrice() << "|"
+             << obj->GetQuantity() << "\n";
     }
 
     file.close();
@@ -142,7 +142,13 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
             int sellPrice = std::stoi(sellStr);
             int buyPrice = std::stoi(buyStr);
             Object* obj = new Object(name, description, health, sellPrice, buyPrice);
-            player.GetBag().AddObject(obj);
+            // 第 6 段为可选数量段（兼容旧存档）；缺省数量为 1
+            std::string qtyStr;
+            if (std::getline(itemIss, qtyStr) && !qtyStr.empty()) {
+                try { obj->SetQuantity(std::stoi(qtyStr)); } catch (...) { /* 忽略非法数量 */ }
+            }
+            // 存档已按堆叠聚合：直接入包，避免再次合并
+            player.GetBag().AddUnique(obj);
         }
     }
 

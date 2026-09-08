@@ -11,11 +11,12 @@
 
 #include "event.h"
 #include "tool.h"
-#include "tool_Controller.h"
+#include "tool_controller.h"
 
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -119,6 +120,26 @@ std::vector<mining::MiningResult> MiningController::stop_mining(
 bool MiningController::is_mining(const MiningState& state) const noexcept
 {
     return state.is_mining();
+}
+
+bool MiningController::can_enter(
+    const std::size_t layer_id,
+    const mining::MiningContext& context
+) const
+{
+    return can_enter_layer(layer_id, context);
+}
+
+std::optional<mining::MiningResult> MiningController::produce_once(
+    const std::size_t layer_id,
+    const mining::MiningContext& context
+)
+{
+    bool interrupted = false;
+    auto results = produce(layer_id, 1, context, interrupted);
+    if (interrupted || results.empty())
+        return std::nullopt;
+    return std::move(results.front());
 }
 
 bool MiningController::can_enter_layer(

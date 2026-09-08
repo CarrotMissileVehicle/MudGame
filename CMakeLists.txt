@@ -16,7 +16,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # 源码注释为 UTF-8（中文），需显式指定 /utf-8，否则 MSVC 按 GBK(936)
 # 解析会在多字节注释末尾吞掉换行导致 C2447/C4819 等错误。
-add_compile_options(/utf-8)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 
 include(FetchContent)
 FetchContent_Declare(cli11
@@ -42,12 +44,8 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-# objects 库：游戏物品基类模块（Object），供 mining_controller / cmd_parser / MudGame 链接。
-add_library(objects src/model/Objects/src/Object.cpp)
-target_include_directories(objects
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/model/Objects/include
-)
+# model_objects 库：游戏物品基类模块（Object）在 src/model/Objects/CMakeLists.txt 定义，
+# 供 mining_controller / cmd_parser / Bag / MudGame 链接。
 
 # Jerry 模块：种菜 / 钓鱼 / 农场 / 肥料 / 市场等完整实现
 set(JERRY_SOURCES
@@ -77,11 +75,18 @@ set(JERRY_SOURCES
 )
 
 add_executable(MudGame main.cpp ${JERRY_SOURCES})
-target_link_libraries(MudGame PRIVATE objects mining_controller cmd_parser cli11)
+target_link_libraries(MudGame PRIVATE
+        model_objects
+        mining_controller
+        cmd_parser
+        player
+        game
+        weather_controller
+        tool_controller
+        view_panels
+        CLI11::CLI11)
 
 target_include_directories(MudGame PRIVATE
-        src/model/Objects/include
-        src/model/Time/include
         src/Controller/Food/include
         src/Controller/Crop/include
         src/Controller/Fertilizer/include

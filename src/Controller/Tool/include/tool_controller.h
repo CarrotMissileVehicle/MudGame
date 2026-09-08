@@ -1,5 +1,5 @@
 /**
- * @file tool_Controller.h
+ * @file tool_controller.h
  * @brief 工具控制器（mud::tool）。
  *
  * 统一管理 3 件工具（锄/竿/镐）：使用、耐久查询、等级加成。

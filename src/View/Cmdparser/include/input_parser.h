@@ -44,6 +44,12 @@ public:
 
 private:
     CLI::App app_;
-    std::size_t layer_{0}; // --layer 目标层（0-4）
-    double factor_{1.0}; // --factor 时间倍率
+    std::size_t layer_{0};    // --layer 目标层（0-4）
+    double factor_{1.0};      // --factor 时间倍率
+    std::size_t plot_{0};     // --plot 地块索引（0 起）
+    std::string crop_;        // --crop 作物名（cabbage/carrot/...）
+    std::string fert_type_;   // --type 肥料类型（normal/advanced）
+    std::string shop_;        // --shop 商店 ID
+    std::string item_;        // --item 物品名
+    std::size_t count_{1};    // --count 数量（默认 1）
 };

@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include "object.h"
+#include "Object.h"
 
 #include <iostream>
 #include <string>
@@ -17,7 +17,7 @@
 #include <map>
 
 /** @brief 矿石数据查询类：提供矿石属性及各层产出分布查询。 */
-class Ore : public object
+class Ore : public Object
 {
 public:
     /** @brief 默认构造：从数据目录加载矿石属性与各层产出分布（JSON）。 */

@@ -37,6 +37,20 @@ int Object::GetBuyingPrice() const {
     return buyingPrice;
 }
 
+int Object::GetQuantity() const {
+    return quantity;
+}
+
+void Object::SetQuantity(int value) {
+    quantity = value;
+    if (quantity < 1) quantity = 1;
+}
+
+void Object::AddQuantity(int delta) {
+    quantity += delta;
+    if (quantity < 1) quantity = 1;
+}
+
 void Object::Broke() {
     health -= BrokenStep;
     if (health < 0) health = 0;

@@ -3,10 +3,10 @@
 
 
 #include <cstddef>
-#include "Farm.h"
+#include "farm.h"
 #include "Crop.h"
 #include "Fertilizer.h"
-#include "Time.h"
+#include "game_time.h"
 
 class FarmingController
 {
@@ -21,7 +21,7 @@ public:
     bool fertilize(std::size_t index, Fertilizer* fertilizer);
     int harvest(std::size_t index);
     // 按游戏时间推进作物生长：白天(06-18点)全速，夜间减半
-    void tick(const Time& time);
+    void tick(const mud::time::GameDateTime& time);
     std::size_t farmSize() const;
 
 private:

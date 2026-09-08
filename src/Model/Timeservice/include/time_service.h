@@ -36,6 +36,9 @@ namespace mud
         /** @brief 推进一帧 = 1 现实秒（受 time_scale 影响）。 */
         void update();
 
+        /** @brief 直接推进指定分钟数（世界推进用）；与时间倍率无关，且不触发定时回调。 */
+        void advance(std::int64_t minutes);
+
         /** @brief 直接设置当前游戏时间。 */
         void set_time(time::GameDateTime t);
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstddef>
+#include <cstdint>
 
 Market::Market(int dayOfWeek, int dayOfMonth)
         : dayOfWeek(dayOfWeek), dayOfMonth(dayOfMonth) {}
@@ -29,10 +30,11 @@ void Market::onNewDay(int week, int day) {
     updateFluctuations();
 }
 
-void Market::onNewDay(const Time& time) {
+void Market::onNewDay(const mud::time::GameDateTime& time) {
     // 由累计天数推出星期(1-7)与日期(1-30)
-    int week = ((time.day - 1) % 7) + 1;
-    int day  = ((time.day - 1) % 30) + 1;
+    const std::int64_t dayCount = time.total_minutes() / 1440;
+    int week = static_cast<int>((dayCount % 7)) + 1;
+    int day  = static_cast<int>((dayCount % 30)) + 1;
     onNewDay(week, day);
 }
 
@@ -131,9 +133,10 @@ bool Market::buy(const std::string& shopId, Object* item,
     if (count <= 0) return false;
     int price = getBuyPrice(shopId, item);
     if (price <= 0) return false;
-    int total = price * count;
+    // count 可能较大（万分位计 → 千余），用 64 位算总额避免 int 溢出
+    const long long total = static_cast<long long>(price) * count;
     if (gold < total) return false;   // 金币不足
-    gold -= total;
+    gold -= static_cast<int>(total);
     return true;
 }
 
@@ -141,7 +144,7 @@ int Market::sell(Object* item, int count, int& gold) {
      if (item == nullptr || count <= 0) return 0;
     int price = getSellPrice(item);
     if (price <= 0) return 0;
-    int total = price * count;
-    gold += total;
-    return total;
+    const long long total = static_cast<long long>(price) * count;
+    gold += static_cast<int>(total);
+    return static_cast<int>(total);
 }

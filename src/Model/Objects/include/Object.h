@@ -17,6 +17,9 @@ public:
     [[nodiscard]] int GetHealth() const;
     [[nodiscard]] int GetSellingPrice() const;
     [[nodiscard]] int GetBuyingPrice() const;
+    [[nodiscard]] int GetQuantity() const;
+    void SetQuantity(int value);
+    void AddQuantity(int delta);
 
     void Broke();
     void Repair(int num);
@@ -26,11 +29,12 @@ public:
 private:
     const int BrokenStep = 10;
 
-    int sellingPrice;
-    int buyingPrice;
+    int sellingPrice = 0;
+    int buyingPrice = 0;
     std::string name;
     std::string description;
-    int health;
+    int health = 0;
+    int quantity = 1;   // 堆叠数量（默认 1 个）
     std::string repairObj;
 };
 

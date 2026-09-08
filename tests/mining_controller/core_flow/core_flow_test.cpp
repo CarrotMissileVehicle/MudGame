@@ -156,3 +156,32 @@ TEST(MiningCoreFlow, PollAndStopWhenIdleAreNoops)
     EXPECT_TRUE(f.handler.stop(f.ok_ctx).empty());
     EXPECT_FALSE(f.handler.is_mining());
 }
+
+// MIN-CF-011 前台即时采矿：produce_once 无需启动会话/推进时间即可产出一次
+TEST(MiningCoreFlow, ProduceOnceReturnsSingleResult)
+{
+    MiningFixture f;
+    const auto result = f.controller.produce_once(0, f.ok_ctx);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result->ore_id.empty());
+    EXPECT_EQ(result->quantity, 1u);
+    EXPECT_GT(result->experience, 0u);
+    // 不产生任何会话副作用
+    EXPECT_FALSE(f.handler.is_mining());
+}
+
+// MIN-CF-012 非法层 produce_once 返回空
+TEST(MiningCoreFlow, ProduceOnceOnInvalidLayerEmpty)
+{
+    MiningFixture f;
+    EXPECT_FALSE(f.controller.produce_once(99, f.ok_ctx).has_value());
+}
+
+// MIN-CF-013 层条件预检 can_enter：合法层通过，越界层拒绝，不启动会话
+TEST(MiningCoreFlow, CanEnterChecksLayerWithoutSession)
+{
+    MiningFixture f;
+    EXPECT_TRUE(f.controller.can_enter(0, f.ok_ctx));
+    EXPECT_FALSE(f.controller.can_enter(99, f.ok_ctx));
+    EXPECT_FALSE(f.handler.is_mining()); // 预检无副作用
+}

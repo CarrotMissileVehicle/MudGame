@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <vector>
 #include "Fish.h"
-#include "Time.h"
+#include "game_time.h"
 
 class FishingController
 {
@@ -17,7 +17,7 @@ public:
     Fish* rollFish() const;
     Fish* tickFish();
     // 按游戏时间推进：白天(06-18点)用基础成功率，夜间减半
-    void tick(const Time& time);
+    void tick(const mud::time::GameDateTime& time);
     void setCatchRate(float catchRate);
     std::size_t poolSize() const;
 

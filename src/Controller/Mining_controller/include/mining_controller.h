@@ -23,6 +23,7 @@ namespace mud::tool  { class ToolController; }
 using namespace mud;
 
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 /** @brief 采矿流程控制器：驱动会话状态与产出计算。 */
@@ -82,6 +83,24 @@ public:
     bool is_mining(
         const MiningState& state
     ) const noexcept;
+
+    /**
+     * @brief 仅校验玩家能否进入目标层（不启动会话），供前台等待循环预检。
+     */
+    bool can_enter(
+        std::size_t layer_id,
+        const mining::MiningContext& context
+    ) const;
+
+    /**
+     * @brief 单次即时采矿产出：前台"等待 3-6 秒出一次结果"的循环用。
+     * 不依赖会话/游戏时间推进，直接结算一次产出；
+     * 若工具损坏或遭遇塌方中断 则返回 nullopt。
+     */
+    std::optional<mining::MiningResult> produce_once(
+        std::size_t layer_id,
+        const mining::MiningContext& context
+    );
 
 private:
     /** @brief 检查玩家是否满足进入目标层的等级与照明条件。 */

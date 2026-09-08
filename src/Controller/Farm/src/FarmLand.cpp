@@ -1,4 +1,4 @@
-#include "../include/FarmLand.h"
+#include "../include/farmland.h"
 
 FarmLand::FarmLand(Crop* crop)
         : crop(crop) {
@@ -34,7 +34,8 @@ bool FarmLand::water() {
 
 void FarmLand::fertilize(int speedUp) {
     // speedUp: 剩余生长周期的加速除数（2 减半，3 减为 1/3）
-    if (speedUp > 0) growthStage += growthStage / speedUp;
+    if (!occupied || speedUp <= 0) return;
+    growthStage += growthStage / speedUp;
 }
 
 int FarmLand::harvest() {
@@ -50,6 +51,6 @@ int FarmLand::harvest() {
 
 void FarmLand::tickGrow(bool growFullSpeed) {
     if (!occupied) return;
+    if (!watered) return; // 未浇水不生长（浇水由玩家手动或雨天自动进行）
     growthStage += growFullSpeed ? 2 : 1;
-    watered = true;
 }

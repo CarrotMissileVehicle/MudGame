@@ -1,4 +1,4 @@
-# crop 库：农作物体系（仅头文件）。依赖物品基类 controller_objects。
+# crop 库：农作物体系（仅头文件）。依赖物品基类 model_objects。
 add_library(crop INTERFACE)
 
 target_include_directories(crop
@@ -8,5 +8,6 @@ target_include_directories(crop
 
 target_link_libraries(crop
     INTERFACE
-        controller_objects
+        food
+        model_objects
 )

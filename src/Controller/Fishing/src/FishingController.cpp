@@ -40,7 +40,7 @@ void FishingController::setCatchRate(float catchRate) {
     this->catchRate = isDaytime ? catchRate : catchRate * 0.5f;
 }
 
-void FishingController::tick(const Time& time) {
+void FishingController::tick(const mud::time::GameDateTime& time) {
     // 06:00 - 18:00 为白天，全速；夜间成功率减半
     isDaytime = (time.hour >= 6 && time.hour < 18);
     catchRate = isDaytime ? baseCatchRate : baseCatchRate * 0.5f;

@@ -6,7 +6,7 @@
 #define MUDGAME_GAME_H
 
 #include <chrono>
-#include "../../../Model/Timeservice/include/game_time.h"
+#include "game_time.h"
 
 class Game {
 public:

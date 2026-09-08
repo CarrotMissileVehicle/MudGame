@@ -26,7 +26,9 @@ bool FarmingController::waterAll() {
 
 bool FarmingController::fertilize(std::size_t index, Fertilizer* fertilizer) {
     if (farm == nullptr || fertilizer == nullptr) return false;
-    farm->getFarmland(index).fertilize(fertilizer->getSpeedUp());
+    auto& land = farm->getFarmland(index);
+    if (!land.isOccupied()) return false; // 空地不可施肥
+    land.fertilize(fertilizer->getSpeedUp());
     return true;
 }
 
@@ -35,7 +37,7 @@ int FarmingController::harvest(std::size_t index) {
     return farm->getFarmland(index).harvest();
 }
 
-void FarmingController::tick(const Time& time) {
+void FarmingController::tick(const mud::time::GameDateTime& time) {
     if (farm == nullptr) return;
     // 06:00 - 18:00 为白天，作物全速生长；夜间减半
     bool isDaytime = (time.hour >= 6 && time.hour < 18);
