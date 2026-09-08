@@ -37,4 +37,9 @@ namespace mud::view
     }
 
     void print_prompt(Renderer& r) { r.print_raw("> "); }
+
+    void print_input_hint(Renderer& r, const std::string& hint)
+    {
+        r.print("输入格式：" + hint);
+    }
 } // namespace mud::view

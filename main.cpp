@@ -68,6 +68,7 @@
 #include "TerminalView.h"
 #include "input_parser.h"
 #include "connector.h"
+#include "PlayerSerializer.h"
 
 namespace
 {
@@ -77,6 +78,9 @@ namespace
 
     // 每次垂钓消耗的体力（饱食度）点数
     constexpr int kFishingSatietyCost = 5;
+
+    // 默认存档文件名
+    constexpr const char* kSaveFileName = "mudgame.sav";
 
     // 从命令 options 读取整数型命名参数，缺省返回 fallback。
     long long opt_int(const mud::cmd::Command& cmd, const std::string& key, long long fallback)
@@ -147,8 +151,11 @@ int main()
     Shop groceryShop("grocery", "杂货铺");
     groceryShop.addItem(ShopItem(&fertNormal));
     groceryShop.addItem(ShopItem(&fertAdvanced));
+    // 铁匠铺：位于集市，专营工具修复服务（修复按丢失的矿石/金币扣费，不由货架商品表达）
+    Shop blacksmithShop("blacksmith", "铁匠铺");
     market.registerShop(seedShop);
     market.registerShop(groceryShop);
+    market.registerShop(blacksmithShop);
     market.onNewDay(timeService.now()); // 同步集市日历到当前游戏时间
     int gold = 200;
 
@@ -287,6 +294,68 @@ int main()
         m.start_time = miningHandler.start_time();
         m.mining_level = 1 + player.GetMineExp() / 100;
         return m;
+    };
+
+    const auto make_blacksmith_view = [&]() -> mud::view::BlacksmithView {
+        mud::view::BlacksmithView v;
+        v.gold = gold;
+        for (const auto id : {mud::tool::ToolId::Hoe, mud::tool::ToolId::Rod, mud::tool::ToolId::Pickaxe})
+        {
+            mud::view::ToolRepairView tr;
+            tr.name = tools.name(id);
+            tr.durability = tools.durability(id);
+            tr.max_durability = tools.max_durability(id);
+            tr.broken = tools.is_broken(id);
+            tr.repair_gold = tools.gold_repair_cost(id);
+            tr.repair_ore = tools.repair_ore(id);
+            tr.repair_ore_needed = tools.repair_ore_count(id);
+            tr.repair_ore_held = player.GetBag().CountObject(tools.repair_ore(id));
+            v.tools.push_back(tr);
+        }
+        return v;
+    };
+
+    // 输入格式提示：根据玩家当前位置给出可用指令的调用格式，供每次输入前展示。
+    const auto input_hint = [&]() -> std::string {
+        const char* place = nullptr;
+        std::string cmds;
+        switch (player.GetPosition())
+        {
+            case AtHome:
+                place = "小屋";
+                cmds = "player.status | farm.status | fish.status | move.<up/down/left/right> 移动到地点";
+                break;
+            case AtFarmland:
+                place = "农田";
+                cmds = "farm.status | farm.sow --plot <0-" + std::to_string(farming.farmSize() - 1)
+                     + "> --crop <cabbage/carrot/tomato/pumpkin/lingzhi> | farm.water --plot <n> "
+                       "| farm.fertilize --plot <n> --type <normal/advanced> | farm.harvest --plot <n> "
+                       "| move.<方向>";
+                break;
+            case AtCoast:
+                place = "海岸";
+                cmds = "fish.status | fish.tick（按 q 退出） | move.<方向>";
+                break;
+            case AtMine:
+                place = "矿洞";
+                cmds = "mine.status | mine.start --layer <0-4>（按 q 退出） | mine.stop | move.<方向>";
+                break;
+            case AtTown:
+                place = "小镇";
+                cmds = "market.status | market.buy --shop <seed/grocery> --item <名称> --count <N> "
+                       "| market.sell --item <名称> --count <N> "
+                       "| blacksmith.status | blacksmith.repair --tool <hoe/rod/pickaxe> --method <ore/gold> "
+                       "| move.<方向>";
+                break;
+        }
+        return std::string("【") + place + "】" + cmds
+             + "；通用：time.now | weather.now | tools.status | save | help | quit";
+    };
+
+    // 每次输入前先打印当前位置的输入格式提示，再输出命令提示符。
+    const auto show_prompt = [&]() {
+        mud::view::print_input_hint(outRenderer, input_hint());
+        terminal.print_prompt();
     };
 
     // 通用输出：当前时刻 + 天气
@@ -763,9 +832,104 @@ int main()
         return HandlerResult::Ok;
     });
 
-    // 存档（待接入持久化）
+    // 铁匠铺（集市内，工具修复服务）
+    connector.bind("blacksmith.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+        if (player.GetPosition() != AtTown) {
+            msg("你不在城镇，先去小镇集市看看。");
+            return HandlerResult::Failed;
+        }
+        terminal.render_blacksmith(make_blacksmith_view());
+        return HandlerResult::Ok;
+    });
+
+    connector.bind("blacksmith.repair", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+        if (player.GetPosition() != AtTown) {
+            msg("你不在城镇，无法前往铁匠铺。");
+            return HandlerResult::Failed;
+        }
+        const std::string tool_key = cmd.options.count("tool") ? cmd.options.at("tool") : "";
+        const std::string method = cmd.options.count("method") ? cmd.options.at("method") : "";
+        mud::tool::ToolId id;
+        if (tool_key == "hoe")             id = mud::tool::ToolId::Hoe;
+        else if (tool_key == "rod")        id = mud::tool::ToolId::Rod;
+        else if (tool_key == "pickaxe")    id = mud::tool::ToolId::Pickaxe;
+        else {
+            msg("未知工具：" + tool_key + "（可用 hoe/rod/pickaxe）");
+            return HandlerResult::BadArgument;
+        }
+        if (method != "gold" && method != "ore") {
+            msg("未知修复方式：" + method + "（可用 ore/gold）");
+            return HandlerResult::BadArgument;
+        }
+        if (tools.is_full(id)) {
+            msg(tools.name(id) + " 完好无损，无需修复。");
+            return HandlerResult::Ok;
+        }
+        const int gold_cost = tools.gold_repair_cost(id);
+        const std::string ore = tools.repair_ore(id);
+        const int ore_needed = tools.repair_ore_count(id);
+
+        if (method == "ore") {
+            const int ore_cost = tools.ore_repair_cost(id);
+            const int ore_held = player.GetBag().CountObject(ore);
+            if (ore_held < ore_needed) {
+                msg("矿石不足：" + ore + " 需要 x" + std::to_string(ore_needed)
+                    + "，当前持有 " + std::to_string(ore_held) + "。");
+                return HandlerResult::Failed;
+            }
+            if (gold < ore_cost) {
+                msg("金币不足，矿石修复还需 " + std::to_string(ore_cost) + " 金币（当前 "
+                    + std::to_string(gold) + "）。");
+                return HandlerResult::Failed;
+            }
+            player.GetBag().RemoveObject(ore, ore_needed);
+            gold -= ore_cost;
+            player.SetState(StateCode::Repairing);
+            tools.repair_full(id);
+            player.SetState(StateCode::Waiting);
+            msg("铁匠用 " + ore + " x" + std::to_string(ore_needed) + " + 金币 "
+                + std::to_string(ore_cost) + " 修好了" + tools.name(id) + "。");
+            return HandlerResult::Ok;
+        }
+        // 金币修复
+        if (gold < gold_cost) {
+            msg("金币不足：修复" + tools.name(id) + " 需要 " + std::to_string(gold_cost)
+                + " 金币（当前 " + std::to_string(gold) + "）。");
+            return HandlerResult::Failed;
+        }
+        gold -= gold_cost;
+        player.SetState(StateCode::Repairing);
+        tools.repair_full(id);
+        player.SetState(StateCode::Waiting);
+        msg("铁匠花费 " + std::to_string(gold_cost) + " 金币修好了" + tools.name(id) + "。");
+        return HandlerResult::Ok;
+    });
+
+    // 存档 / 读档
     connector.bind("save", [&](const mud::cmd::Command&, const HandlerContext&) {
-        msg("存档功能尚未接入。");
+        PlayerSerializer serializer;
+        if (serializer.Save(kSaveFileName, player, game, gold, tools,
+                            timeService.session_total())) {
+            msg(std::string("存档成功：") + kSaveFileName);
+        } else {
+            msg("存档失败（无法写入存档文件）。");
+        }
+        return HandlerResult::Ok;
+    });
+
+    connector.bind("load", [&](const mud::cmd::Command&, const HandlerContext&) {
+        PlayerSerializer serializer;
+        std::int64_t totalMinutes = -1;
+        if (!serializer.Load(kSaveFileName, player, game, gold, tools, totalMinutes)) {
+            msg(std::string("读档失败：没有找到存档 ") + kSaveFileName + "。");
+            return HandlerResult::Failed;
+        }
+        if (totalMinutes >= 0) {
+            mud::time::GameDateTime t;
+            t.advance(totalMinutes); // 由存档总分钟数重建游戏内时钟
+            timeService.set_time(t);
+        }
+        msg(std::string("读档成功，继续你的冒险吧。"));
         return HandlerResult::Ok;
     });
 
@@ -787,17 +951,18 @@ int main()
 
     // ================= 主循环 =================
     terminal.render_message(mud::view::MessageLine{
-        "欢迎来到 胡萝卜山谷 MUD！时间随真实时间自动流逝（time.scale 调速），输入 help 查看指令，quit 退出。"});
+        "欢迎来到 胡萝卜山谷 MUD！时间随真实时间自动流逝（time.scale 调速），"
+        "每次输入前会提示当前位置的指令格式，输入 help 查看全部指令，quit 退出。"});
     render_now();
     terminal.render_map(player.GetPosition());
-    terminal.print_prompt();
+    show_prompt();
 
     std::string line;
     while (std::getline(std::cin, line)) {
         const auto cmd = parser.parse(line);
         const std::string& verb = cmd.verb;
         if (verb.empty()) {
-            terminal.print_prompt();
+            show_prompt();
             continue;
         }
         if (verb == "help") {
@@ -817,7 +982,7 @@ int main()
                 terminal.render_message(mud::view::MessageLine{
                     "未知命令：" + verb + "（输入 help 查看）"});
         }
-        terminal.print_prompt();
+        show_prompt();
     }
 
     timeThread.request_stop();

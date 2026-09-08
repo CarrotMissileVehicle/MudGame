@@ -83,6 +83,7 @@ target_link_libraries(MudGame PRIVATE
         game
         weather_controller
         tool_controller
+        player_serializer
         view_panels
         CLI11::CLI11)
 

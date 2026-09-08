@@ -62,9 +62,15 @@ InputParser::InputParser()
 
     app_.add_subcommand("tools.status", "查看工具耐久");
 
+    app_.add_subcommand("blacksmith.status", "查看铁匠铺修复信息");
+    auto* blacksmithRepair = app_.add_subcommand("blacksmith.repair", "在铁匠铺修复工具");
+    blacksmithRepair->add_option("--tool", tool_, "工具名(hoe/rod/pickaxe)")->required();
+    blacksmithRepair->add_option("--method", method_, "修复方式(ore/gold)")->required();
+
     app_.add_subcommand("help", "显示帮助");
     app_.add_subcommand("quit", "退出游戏");
     app_.add_subcommand("save", "保存游戏");
+    app_.add_subcommand("load", "读取存档");
 }
 
 /**

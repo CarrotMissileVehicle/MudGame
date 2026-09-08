@@ -6,12 +6,12 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <iostream>
 
-bool PlayerSerializer::Save(const std::string& filename, const Player& player, const Game& game) {
+bool PlayerSerializer::Save(const std::string& filename, const Player& player, const Game& game,
+                            int gold, const mud::tool::ToolController& tools,
+                            std::int64_t totalGameMinutes) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "无法打开文件进行写入: " << filename << std::endl;
         return false;
     }
 
@@ -23,6 +23,7 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
     file << "farmingExp=" << player.GetFarmingExp() << "\n";
     file << "fishExp=" << player.GetFishExp() << "\n";
     file << "mineExp=" << player.GetMineExp() << "\n";
+    file << "gold=" << gold << "\n";
 
     mud::time::GameDateTime saveOpen = game.getSaveOpenTime();
     file << "saveOpenYear=" << saveOpen.year << "\n";
@@ -33,6 +34,15 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
 
     auto totalPlaySeconds = game.getTotalPlayTime().count();
     file << "totalPlaySeconds=" << totalPlaySeconds << "\n";
+    file << "gameTotalMinutes=" << totalGameMinutes << "\n";
+
+    // 工具状态：等级 + 耐久
+    file << "toolHoeLevel=" << tools.level(mud::tool::ToolId::Hoe) << "\n";
+    file << "toolHoeDurability=" << tools.durability(mud::tool::ToolId::Hoe) << "\n";
+    file << "toolRodLevel=" << tools.level(mud::tool::ToolId::Rod) << "\n";
+    file << "toolRodDurability=" << tools.durability(mud::tool::ToolId::Rod) << "\n";
+    file << "toolPickLevel=" << tools.level(mud::tool::ToolId::Pickaxe) << "\n";
+    file << "toolPickDurability=" << tools.durability(mud::tool::ToolId::Pickaxe) << "\n";
 
     const auto& bag = player.GetBag();
     const auto* objectsPtr = &bag.GetObjects();
@@ -48,19 +58,18 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
     }
 
     file.close();
-    std::cout << "存档成功: " << filename << std::endl;
     return true;
 }
 
 bool PlayerSerializer::Save(const std::string& filename, const Player& player) {
     Game game;
-    return Save(filename, player, game);
+    return Save(filename, player, game, 0, mud::tool::ToolController{}, 0);
 }
 
-bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& game) {
+bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& game, int& gold,
+                            mud::tool::ToolController& tools, std::int64_t& totalGameMinutes) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "无法打开存档文件: " << filename << std::endl;
         return false;
     }
 
@@ -68,12 +77,19 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     StateCode state = Waiting;
     int satiety = 100, maxSatiety = 100;
     int farmingExp = 0, fishExp = 0, mineExp = 0;
+    int goldInFile = 0;
+    bool hasGold = false;
+    bool hasTotalMinutes = false;
 
     long long saveOpenYear = 0, saveOpenMonth = 1, saveOpenDay = 0, saveOpenHour = 0, saveOpenMinute = 0;
     long long totalPlaySeconds = 0;
 
+    int hoeLevel = 1, hoeDurability = 0;
+    int rodLevel = 1, rodDurability = 0;
+    int pickLevel = 1, pickDurability = 0;
+    bool hasTools = false;
+
     std::string line;
-    int bagCount = 0;
     std::vector<std::string> itemLines;
 
     while (std::getline(file, line)) {
@@ -96,6 +112,9 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
                 fishExp = std::stoi(value);
             } else if (key == "mineExp") {
                 mineExp = std::stoi(value);
+            } else if (key == "gold") {
+                goldInFile = std::stoi(value);
+                hasGold = true;
             } else if (key == "saveOpenYear") {
                 saveOpenYear = std::stoll(value);
             } else if (key == "saveOpenMonth") {
@@ -108,8 +127,29 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
                 saveOpenMinute = std::stoll(value);
             } else if (key == "totalPlaySeconds") {
                 totalPlaySeconds = std::stoll(value);
+            } else if (key == "gameTotalMinutes") {
+                totalGameMinutes = std::stoll(value);
+                hasTotalMinutes = true;
+            } else if (key == "toolHoeLevel") {
+                hoeLevel = std::stoi(value);
+                hasTools = true;
+            } else if (key == "toolHoeDurability") {
+                hoeDurability = std::stoi(value);
+                hasTools = true;
+            } else if (key == "toolRodLevel") {
+                rodLevel = std::stoi(value);
+                hasTools = true;
+            } else if (key == "toolRodDurability") {
+                rodDurability = std::stoi(value);
+                hasTools = true;
+            } else if (key == "toolPickLevel") {
+                pickLevel = std::stoi(value);
+                hasTools = true;
+            } else if (key == "toolPickDurability") {
+                pickDurability = std::stoi(value);
+                hasTools = true;
             } else if (key == "bagCount") {
-                bagCount = std::stoi(value);
+                // 容器连线数（按行还原，不必记录该值）
             } else if (key == "item") {
                 itemLines.push_back(value);
             }
@@ -130,6 +170,15 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     }
     game.setTotalPlayTime(seconds(totalPlaySeconds));
 
+    if (hasGold) gold = goldInFile;
+    // 仅当存档含工具状态段时还原；旧存档缺省保持调用方现有工具（满耐久/1级）
+    if (hasTools) {
+        tools.restore(mud::tool::ToolId::Hoe, hoeLevel, hoeDurability);
+        tools.restore(mud::tool::ToolId::Rod, rodLevel, rodDurability);
+        tools.restore(mud::tool::ToolId::Pickaxe, pickLevel, pickDurability);
+    }
+    (void)hasTotalMinutes; // gameTotalMinutes 不存在时仅保持调用方初值
+
     for (const auto& itemLine : itemLines) {
         std::istringstream itemIss(itemLine);
         std::string name, description, healthStr, sellStr, buyStr;
@@ -137,7 +186,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
             std::getline(itemIss, description, '|') &&
             std::getline(itemIss, healthStr, '|') &&
             std::getline(itemIss, sellStr, '|') &&
-            std::getline(itemIss, buyStr)) {
+            std::getline(itemIss, buyStr, '|')) {
             int health = std::stoi(healthStr);
             int sellPrice = std::stoi(sellStr);
             int buyPrice = std::stoi(buyStr);
@@ -153,13 +202,15 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     }
 
     file.close();
-    std::cout << "读档成功: " << filename << std::endl;
     return true;
 }
 
 bool PlayerSerializer::Load(const std::string& filename, Player& player) {
     Game game;
-    return Load(filename, player, game);
+    int gold = 0;
+    mud::tool::ToolController tools;
+    std::int64_t total = -1;
+    return Load(filename, player, game, gold, tools, total);
 }
 
 std::string PlayerSerializer::GetPositionName(PositionCode code) const {

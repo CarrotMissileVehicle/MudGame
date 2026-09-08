@@ -5,12 +5,45 @@
 #include "../include/Bag.h"
 
 #include <algorithm>
+#include <utility>
 
 Bag::~Bag() {
     for (auto obj : objects) {
         delete obj;
     }
     objects.clear();
+}
+
+// 深拷贝：为每件物品分配新对象，副本与原包互不影响
+Bag::Bag(const Bag& other)
+{
+    for (const auto obj : other.objects)
+        objects.push_back(new Object(*obj));
+}
+
+Bag& Bag::operator=(const Bag& other)
+{
+    if (this == &other) return *this;
+    for (auto obj : objects) delete obj;
+    objects.clear();
+    for (const auto obj : other.objects)
+        objects.push_back(new Object(*obj));
+    return *this;
+}
+
+Bag::Bag(Bag&& other) noexcept
+    : objects(std::move(other.objects))
+{
+    other.objects.clear();
+}
+
+Bag& Bag::operator=(Bag&& other) noexcept
+{
+    if (this == &other) return *this;
+    for (auto obj : objects) delete obj;
+    objects = std::move(other.objects);
+    other.objects.clear();
+    return *this;
 }
 
 void Bag::AddObject(Object* obj) {
