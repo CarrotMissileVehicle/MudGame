@@ -7,6 +7,7 @@
  */
 #include "input_parser.h"
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -74,6 +75,29 @@ InputParser::InputParser()
 }
 
 /**
+ * @brief 将 CLI11 解析错误转译为中文提示。
+ *
+ * 按错误类型归类（缺参/类型/数量/多余），无法归类的回退为中文前缀 + 原始英文内容。
+ */
+namespace
+{
+    std::string chinese_parse_error(const CLI::ParseError& e)
+    {
+        if (dynamic_cast<const CLI::RequiredError*>(&e))
+            return "指令有误：缺少必填参数（如 --layer / --plot 等选项）。";
+        if (dynamic_cast<const CLI::ConversionError*>(&e))
+            return "指令有误：参数值无法解析（数字或类型格式不正确）。";
+        if (dynamic_cast<const CLI::ArgumentMismatch*>(&e))
+            return "指令有误：该命令的参数个数不匹配，请检查格式。";
+        if (dynamic_cast<const CLI::ExtrasError*>(&e))
+            return "指令有误：存在无法识别的参数或多余内容。";
+        if (dynamic_cast<const CLI::OptionNotFound*>(&e))
+            return "指令有误：使用了不存在的选项。";
+        return "指令有误：" + std::string(e.what());
+    }
+} // namespace
+
+/**
  * @brief 解析单行输入为命令对象。
  * @param line 用户输入的命令行。
  * @return 解析结果；空行返回空 verb，解析错误返回 verb="error"，--help 返回 verb="help"。
@@ -97,7 +121,7 @@ mud::cmd::Command InputParser::parse(const std::string& line)
             cmd.verb = "help"; // --help 触发：不在此打印，交由 main 统一打印 help_text()
             return cmd;
         }
-        (void)app_.exit(e); // 打印参数错误到 stdout，绝不退出进程
+        std::cout << chinese_parse_error(e) << std::endl;
         cmd.verb = "error";
         return cmd;
     }
@@ -123,3 +147,31 @@ mud::cmd::Command InputParser::parse(const std::string& line)
 
 /** @brief 返回 CLI11 生成的完整帮助文本。 */
 std::string InputParser::help_text() const { return app_.help(); }
+
+/**
+ * @brief 交互模式：仅从输入行提取 verb，忽略后续参数。
+ *
+ * 取第一个非空白 token 作为 verb，其余丢弃。空行返回空字符串。
+ * 不做 schema 校验——参数由 ParameterCollector 逐个交互收集。
+ *
+ * 空白包括空格 / 制表符 / 换行符 / 回车符。
+ */
+std::string InputParser::parse_verb_only(const std::string& line) const
+{
+    const auto is_ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+    };
+
+    // 跳过前导空白
+    std::size_t start = 0;
+    while (start < line.size() && is_ws(line[start]))
+        ++start;
+    if (start >= line.size()) return {};
+
+    // 提取到第一个空白
+    std::size_t end = start;
+    while (end < line.size() && !is_ws(line[end]))
+        ++end;
+
+    return line.substr(start, end - start);
+}

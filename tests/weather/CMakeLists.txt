@@ -1,5 +1,5 @@
-# weather 模块测试：配置查表（DEF-006 回归）与随机生成分布鲁棒性。
-# weather_controller 以 PUBLIC 链接 farm / time_service，传递获得依赖。
+# weather_controller 模块测试：天气/事件系统冲突修复验证。
+# 链接 weather_controller（PUBLIC 依赖 farm / time_service 随目标传递）。
 function(mudgame_add_weather_test target)
     add_executable(${target} ${ARGN})
     target_link_libraries(${target} PRIVATE gtest_main weather_controller)
@@ -7,5 +7,5 @@ function(mudgame_add_weather_test target)
     add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
-mudgame_add_weather_test(weather_config_test
-    config_lookup/weather_config_test.cpp)
+mudgame_add_weather_test(weather_event_test
+    event_system_test.cpp)

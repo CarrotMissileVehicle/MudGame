@@ -1,9 +1,6 @@
 /**
  * @file Renderer.h
- * @brief Renderer 抽象：View 层唯一输出出口。
- *
- * StdoutRenderer 输出到终端；StringRenderer 捕获到内存字符串（供测试断言）。
- * 所有面板只持 Renderer 引用，不直接使用 std::cout。
+ * @brief 视图输出抽象：全部 View 组件经由 Renderer 输出，便于测试替换。
  */
 #pragma once
 
@@ -11,36 +8,41 @@
 
 namespace mud::view
 {
-    /** @brief 输出设备抽象：print 追加换行，print_raw 原样输出。 */
+    /**
+     * @brief 文本输出抽象。View 层唯一输出出口（替代散落的 std::cout）。
+     */
     class Renderer
     {
     public:
         virtual ~Renderer() = default;
 
-        /** @brief 输出一行（自动追加换行）。 */
+        /// 输出一行（自动换行）。
         virtual void print(const std::string& line) = 0;
 
-        /** @brief 原样输出（不追加换行）。 */
+        /// 输出原始文本（不换行，用于提示符）。
         virtual void print_raw(const std::string& s) = 0;
     };
 
-    /** @brief 标准输出实现。 */
-    class StdoutRenderer final : public Renderer
+    /** @brief 标准输出实现（stdout）。 */
+    class StdoutRenderer : public Renderer
     {
     public:
         void print(const std::string& line) override;
         void print_raw(const std::string& s) override;
     };
 
-    /** @brief 字符串捕获实现（测试断言 / 缓冲渲染用）。 */
-    class StringRenderer final : public Renderer
+    /** @brief 字符串实现：把输出累积进缓冲区，供单元测试断言。 */
+    class StringRenderer : public Renderer
     {
     public:
         void print(const std::string& line) override;
         void print_raw(const std::string& s) override;
 
-        /** @brief 已捕获的全部输出文本。 */
-        [[nodiscard]] const std::string& text() const { return text_; }
+        /// 返回当前累积的全部输出。
+        const std::string& text() const noexcept { return text_; }
+
+        /// 清空缓冲区。
+        void clear() noexcept { text_.clear(); }
 
     private:
         std::string text_;

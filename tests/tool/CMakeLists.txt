@@ -1,5 +1,5 @@
-# tool 模块测试：ToolController 按 ToolId 查找（DEF-006 回归）。
-# tool_controller 自包含（无外部依赖），测试目标只需链接 tool_controller。
+# tool 模块测试：工具耐久、修复费用与读档还原。
+# 链接 tool_controller（自包含，无外部依赖）。
 function(mudgame_add_tool_test target)
     add_executable(${target} ${ARGN})
     target_link_libraries(${target} PRIVATE gtest_main tool_controller)
@@ -7,5 +7,5 @@ function(mudgame_add_tool_test target)
     add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
-mudgame_add_tool_test(tool_lookup_test
-    lookup/tool_lookup_test.cpp)
+mudgame_add_tool_test(tool_repair_test
+    tool_repair_test.cpp)

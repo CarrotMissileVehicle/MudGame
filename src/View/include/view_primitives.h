@@ -1,8 +1,9 @@
 /**
  * @file view_primitives.h
- * @brief View 层通用渲染原语：分隔线 / 标题 / 键值对 / 时间格式化 / 提示符。
+ * @brief View 层通用渲染原语：分隔线 / 标题栏 / 字段行 / 时间格式化。
  *
- * 仅依赖 Renderer 抽象与纯时间类型，不触碰任何业务模块。
+ * 全部经由 Renderer 输出；本模块不依赖任何业务类型
+ * （仅使用纯时间类型 GameDateTime 做格式化）。
  */
 #pragma once
 
@@ -13,21 +14,22 @@
 
 namespace mud::view
 {
-    /** @brief 输出宽度个 ch 字符组成的分隔线。 */
-    void print_separator(Renderer& r, int width, char ch);
+    /// 输出宽度固定为 60 字符的分隔线。
+    void print_separator(Renderer& r, int width = 60, char ch = '-');
 
-    /** @brief 输出标题（上下各一条 ch 组成的边线）。 */
-    void print_title(Renderer& r, const std::string& title, char ch);
+    /// 输出包裹式标题（上下分隔线夹标题）。
+    void print_title(Renderer& r, const std::string& title, char ch = '=');
 
-    /** @brief 输出 "label: value" 形式的键值对。 */
+    /// 输出 `label: value` 字段行。
     void print_pair(Renderer& r, const std::string& label, const std::string& value);
 
-    /** @brief 格式化为 "Y年M月D日 HH:MM"（时分补零）。 */
-    [[nodiscard]] std::string format_time(const mud::time::GameDateTime& t);
+    /// 统一时间显示格式：`Y年M月D日 HH:MM`（收编 main 的 fmt_time）。
+    std::string format_time(const mud::time::GameDateTime& t);
 
-    /** @brief 输出命令提示符。 */
+    /// 输出命令提示符 `> `（不换行）。
     void print_prompt(Renderer& r);
 
-    /** @brief 输出输入格式提示行。 */
+    /// 输出输入格式提示行（如 `输入格式：market.buy --shop seed --item 小白菜种子`）。
+    /// 组合根负责装配提示文本，View 只负责展示。
     void print_input_hint(Renderer& r, const std::string& hint);
 } // namespace mud::view

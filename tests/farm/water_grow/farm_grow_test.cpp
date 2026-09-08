@@ -16,10 +16,24 @@ TEST(FarmLandGrow, WateredLandGrowsAndDryLandStalls)
     EXPECT_EQ(dry.getGrowthStage(), 0);      // 缺水停滞
 
     ASSERT_TRUE(wet.water());
-    wet.tickGrow(true);                       // 白天全速 +2
-    EXPECT_EQ(wet.getGrowthStage(), 2);
     wet.tickGrow(false);                      // 夜间半速 +1
-    EXPECT_EQ(wet.getGrowthStage(), 3);
+    EXPECT_EQ(wet.getGrowthStage(), 1);
+    wet.tickGrow(false);                      // 夜间半速 +1
+    EXPECT_EQ(wet.getGrowthStage(), 2);
+}
+
+// 生长阶段钳制到周期上限（远端合并的 DEF-008 钳制行为）
+TEST(FarmLandGrow, GrowthStageClampedToCycle)
+{
+    FarmLand land;
+    Cabbage seed;
+    ASSERT_TRUE(land.sow(&seed));
+    ASSERT_TRUE(land.water());
+
+    land.tickGrow(true);                      // 白天全速 +2 → 达周期 2
+    land.tickGrow(true);                      // 不再叠加，钳制在 2
+    EXPECT_EQ(land.getGrowthStage(), 2);
+    EXPECT_EQ(land.getGrowthStage(), land.getCrop()->getGrowthCycle());
 }
 
 // 生长完成后收获：产量正确、地块复位

@@ -1,6 +1,5 @@
-# view 模块测试：Renderer / 渲染原语 / 面板 DTO 组装（S0 头文件补齐回归）。
-# view_panels 以 PUBLIC 链接 view_primitives / map / playerstates，
-# 传递获得 Renderer.h、dto.h 与枚举依赖。
+# view 模块测试：面板渲染（用 StringRenderer 断言输出）。
+# 链接 view_panels：其 PUBLIC 依赖 view_primitives / map / playerstates 会随之传递。
 function(mudgame_add_view_test target)
     add_executable(${target} ${ARGN})
     target_link_libraries(${target} PRIVATE gtest_main view_panels)
@@ -8,5 +7,5 @@ function(mudgame_add_view_test target)
     add_test(NAME ${target} COMMAND ${target})
 endfunction()
 
-mudgame_add_view_test(view_render_test
-    render/view_render_test.cpp)
+mudgame_add_view_test(view_panel_test
+    panel_render_test.cpp)

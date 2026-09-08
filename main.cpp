@@ -197,6 +197,8 @@ int main()
     // ---- 解析 / 派发 ----
     InputParser parser;
     Connector connector;
+    ParameterCollector paramCollector(outRenderer);
+    connector.set_collector(&paramCollector);
     HandlerContext ctx{timeService, miningHandler};
 
     // worldMutex 串行化「后台时间推进」与「REPL 命令执行」对共享世界状态的访问。
@@ -227,8 +229,8 @@ int main()
         return w;
     };
 
-    const auto make_player_status = [&]() -> mud::view::PlayerStatus {
-        mud::view::PlayerStatus s;
+    const auto make_player_status = [&]() -> PlayerStatus {
+        PlayerStatus s;
         s.position = player.GetPosition();
         s.state = player.GetState();
         s.satiety = player.GetSatiety();
@@ -253,8 +255,10 @@ int main()
                 const std::string cname = kCropNames.count(fl.getCrop())
                     ? kCropNames.at(fl.getCrop()) : "未知作物";
                 p.crop_name = cname;
-                p.growth_stage = fl.getGrowthStage();
-                p.growth_max = fl.getCrop()->getGrowthCycle();
+                const int growthCycle = fl.getCrop()->getGrowthCycle();
+                p.growth_stage = fl.getGrowthStage() > growthCycle
+                    ? growthCycle : fl.getGrowthStage(); // 防御性钳制
+                p.growth_max = growthCycle;
                 p.watered = fl.isWatered();
             }
             f.plots.push_back(p);
@@ -340,41 +344,55 @@ int main()
         return v;
     };
 
-    // 输入格式提示：根据玩家当前位置给出可用指令的调用格式，供每次输入前展示。
+    // 输入格式提示：根据玩家当前位置给出可用指令的行动名称，供每次输入前展示。
+    // 交互模式下用户只需输入行动名称（如 farm.sow），系统会逐个提示参数。
     const auto input_hint = [&]() -> std::string {
         const char* place = nullptr;
         std::string cmds;
         switch (player.GetPosition())
         {
             case AtHome:
-                place = "小屋";
-                cmds = "player.status | farm.status | fish.status | move.<up/down/left/right> 移动到地点";
+                place = "小屋（你的起点）";
+                cmds = "  player.status —— 查看角色状态\n"
+                       "  farm.status —— 查看农田概况\n"
+                       "  fish.status —— 查看鱼池概况\n"
+                       "  move.<up/down/left/right> —— 向对应方向移动";
                 break;
             case AtFarmland:
                 place = "农田";
-                cmds = "farm.status | farm.sow --plot <0-" + std::to_string(farming.farmSize() - 1)
-                     + "> --crop <cabbage/carrot/tomato/pumpkin/lingzhi> | farm.water --plot <n> "
-                       "| farm.fertilize --plot <n> --type <normal/advanced> | farm.harvest --plot <n> "
-                       "| move.<方向>";
+                cmds = "  farm.status —— 查看农田\n"
+                       "  farm.sow —— 播种\n"
+                       "  farm.water —— 浇水\n"
+                       "  farm.fertilize —— 施肥\n"
+                       "  farm.harvest —— 收割\n"
+                       "  move.<方向> —— 离开农田";
                 break;
             case AtCoast:
                 place = "海岸";
-                cmds = "fish.status | fish.tick（按 q 退出） | move.<方向>";
+                cmds = "  fish.status —— 查看鱼池\n"
+                       "  fish.tick —— 抛竿垂钓（每轮 3-6 秒，按 q 中止）\n"
+                       "  move.<方向> —— 离开海岸";
                 break;
             case AtMine:
                 place = "矿洞";
-                cmds = "mine.status | mine.start --layer <0-4>（按 q 退出） | mine.stop | move.<方向>";
+                cmds = "  mine.status —— 查看采矿状态\n"
+                       "  mine.start —— 开始采矿（每轮 3-6 秒，按 q 中止）\n"
+                       "  mine.stop —— 手动结束采矿\n"
+                       "  move.<方向> —— 离开矿洞";
                 break;
             case AtTown:
-                place = "小镇";
-                cmds = "market.status | market.buy --shop <seed/grocery> --item <名称> --count <N> "
-                       "| market.sell --item <名称> --count <N> "
-                       "| blacksmith.status | blacksmith.repair --tool <hoe/rod/pickaxe> --method <ore/gold> "
-                       "| move.<方向>";
+                place = "小镇（集市所在地）";
+                cmds = "  market.status —— 查看集市行情\n"
+                       "  market.buy —— 购物\n"
+                       "  market.sell —— 出售背包物品\n"
+                       "  blacksmith.status —— 查看铁匠铺修复信息\n"
+                       "  blacksmith.repair —— 修复工具\n"
+                       "  move.<方向> —— 离开小镇";
                 break;
         }
-        return std::string("【") + place + "】" + cmds
-             + "；通用：time.now | weather.now | tools.status | save | help | quit";
+        return "【" + std::string(place) + "】当前可用指令：\n" + cmds
+             + "\n通用指令：time.now 时间 | weather.now 天气 | tools.status 工具耐久"
+               " | save 存档 | load 读档 | help 帮助 | quit 退出";
     };
 
     // 每次输入前先打印当前位置的输入格式提示，再输出命令提示符。
@@ -999,6 +1017,63 @@ int main()
         return HandlerResult::Ok;
     });
 
+    // ================= 命令参数 Schema 注册（交互模式）=================
+    // 定义每个命令需要的参数，供 ParameterCollector 逐个提示用户输入。
+    // 动态提示内容在注册时从游戏状态捕获。
+
+    const std::size_t farmSize = farming.farmSize();
+
+    connector.register_schema("mine.start", {
+        "开始采矿",
+        {{"layer", "目标层(0-4)", true, ""}}
+    });
+
+    connector.register_schema("time.scale", {
+        "设置时间倍率",
+        {{"factor", "时间倍率(如 0.5/1/2/60)", true, ""}}
+    });
+
+    connector.register_schema("farm.sow", {
+        "播种",
+        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
+         {"crop", "作物名(cabbage/carrot/tomato/pumpkin/lingzhi)", true, ""}}
+    });
+
+    connector.register_schema("farm.water", {
+        "浇水",
+        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
+    });
+
+    connector.register_schema("farm.fertilize", {
+        "施肥",
+        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
+         {"type", "肥料类型(normal/advanced)", true, ""}}
+    });
+
+    connector.register_schema("farm.harvest", {
+        "收割",
+        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
+    });
+
+    connector.register_schema("market.buy", {
+        "从商店购买",
+        {{"shop", "商店ID(seed/grocery)", true, ""},
+         {"item", "物品名", true, ""},
+         {"count", "购买数量", false, "1"}}
+    });
+
+    connector.register_schema("market.sell", {
+        "向集市出售背包物品",
+        {{"item", "物品名或序号", true, ""},
+         {"count", "出售数量", false, "1"}}
+    });
+
+    connector.register_schema("blacksmith.repair", {
+        "在铁匠铺修复工具",
+        {{"tool", "工具名(hoe/rod/pickaxe)", true, ""},
+         {"method", "修复方式(ore/gold)", true, ""}}
+    });
+
     // ================= 自动时间推进（真实时间后台） =================
     // 后台线程每现实秒调 timeService.update()（按 time_scale 推进游戏时间）
     // 并驱动世界推进；quit 时经 jthread 请求停止并自动 join。
@@ -1011,30 +1086,54 @@ int main()
         }
     });
 
-    // ================= 主循环 =================
+    // ================= 主循环（交互模式）=================
+    // 用户只需输入行动名称（如 farm.sow），系统自动逐个提示参数。
     terminal.render_message(mud::view::MessageLine{
-        "欢迎来到 胡萝卜山谷 MUD！时间随真实时间自动流逝（time.scale 调速），"
-        "每次输入前会提示当前位置的指令格式，输入 help 查看全部指令，quit 退出。"});
+        "欢迎来到 胡萝卜山谷 MUD！输入行动名称即可，系统会逐个提示所需参数。\n"
+        "输入 help 查看全部指令，quit 退出。"});
     render_now();
     terminal.render_map(player.GetPosition());
     show_prompt();
 
     std::string line;
     while (std::getline(std::cin, line)) {
-        const auto cmd = parser.parse(line);
-        const std::string& verb = cmd.verb;
+        const std::string verb = parser.parse_verb_only(line);
         if (verb.empty()) {
             show_prompt();
             continue;
         }
         if (verb == "help") {
-            terminal.render_help(parser.help_text());
+            terminal.render_message(mud::view::MessageLine{
+                "可用指令（输入行动名称后按提示填写参数）：\n"
+                "  time.now —— 查看当前时间\n"
+                "  time.scale —— 设置时间倍率\n"
+                "  player.status —— 查看角色状态\n"
+                "  move.up / move.down / move.left / move.right —— 移动\n"
+                "  farm.status —— 查看农田\n"
+                "  farm.sow —— 播种（需地块索引和作物名）\n"
+                "  farm.water —— 浇水（需地块索引）\n"
+                "  farm.fertilize —— 施肥（需地块索引和肥料类型）\n"
+                "  farm.harvest —— 收割（需地块索引）\n"
+                "  fish.status —— 查看鱼池\n"
+                "  fish.tick —— 钓鱼\n"
+                "  weather.now —— 查看天气\n"
+                "  mine.status —— 查看采矿状态\n"
+                "  mine.start —— 开始采矿（需层号）\n"
+                "  mine.stop —— 停止采矿\n"
+                "  market.status —— 查看集市\n"
+                "  market.buy —— 购物（需商店/物品/数量）\n"
+                "  market.sell —— 出售（需物品/数量）\n"
+                "  tools.status —— 查看工具耐久\n"
+                "  blacksmith.status —— 查看铁匠铺\n"
+                "  blacksmith.repair —— 修复工具（需工具名/方式）\n"
+                "  save —— 存档  |  load —— 读档  |  quit —— 退出"});
         } else if (verb == "quit") {
             terminal.render_message(mud::view::MessageLine{"再见！"});
             break;
-        } else if (verb == "error") {
-            // 解析失败消息已由解析器输出
         } else {
+            mud::cmd::Command cmd;
+            cmd.verb = verb;
+            cmd.raw = line;
             HandlerResult result;
             if (verb == "mine.start" || verb == "fish.tick") {
                 // 长交互命令：handler 内部对状态读写分段加锁，交互等待在锁外，
