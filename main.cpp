@@ -315,41 +315,56 @@ int main()
         return v;
     };
 
-    // 输入格式提示：根据玩家当前位置给出可用指令的调用格式，供每次输入前展示。
+    // 输入格式提示：根据玩家当前位置给出可用指令的中文调用格式，供每次输入前展示。
+    // 分行展示（每行一条指令），配中文说明，末尾附任意地点可用的通用指令。
     const auto input_hint = [&]() -> std::string {
         const char* place = nullptr;
         std::string cmds;
         switch (player.GetPosition())
         {
             case AtHome:
-                place = "小屋";
-                cmds = "player.status | farm.status | fish.status | move.<up/down/left/right> 移动到地点";
+                place = "小屋（你的起点）";
+                cmds = "  player.status —— 查看角色状态\n"
+                       "  farm.status —— 查看农田概况\n"
+                       "  fish.status —— 查看鱼池概况\n"
+                       "  move.<up/down/left/right> —— 向对应方向移动（小镇/农田/海岸/矿洞）";
                 break;
             case AtFarmland:
                 place = "农田";
-                cmds = "farm.status | farm.sow --plot <0-" + std::to_string(farming.farmSize() - 1)
-                     + "> --crop <cabbage/carrot/tomato/pumpkin/lingzhi> | farm.water --plot <n> "
-                       "| farm.fertilize --plot <n> --type <normal/advanced> | farm.harvest --plot <n> "
-                       "| move.<方向>";
+                cmds = "  farm.status —— 查看农田\n"
+                       "  farm.sow --plot <0-" + std::to_string(farming.farmSize() - 1)
+                     + "> --crop <cabbage/carrot/tomato/pumpkin/lingzhi> —— 播种\n"
+                       "  farm.water --plot <n> —— 浇水\n"
+                       "  farm.fertilize --plot <n> --type <normal/advanced> —— 施肥\n"
+                       "  farm.harvest --plot <n> —— 收割\n"
+                       "  move.<方向> —— 离开农田";
                 break;
             case AtCoast:
                 place = "海岸";
-                cmds = "fish.status | fish.tick（按 q 退出） | move.<方向>";
+                cmds = "  fish.status —— 查看鱼池\n"
+                       "  fish.tick —— 抛竿垂钓（每轮 3-6 秒，按 q 中止）\n"
+                       "  move.<方向> —— 离开海岸";
                 break;
             case AtMine:
                 place = "矿洞";
-                cmds = "mine.status | mine.start --layer <0-4>（按 q 退出） | mine.stop | move.<方向>";
+                cmds = "  mine.status —— 查看采矿状态\n"
+                       "  mine.start --layer <0-4> —— 开始采矿（每轮 3-6 秒，按 q 中止）\n"
+                       "  mine.stop —— 手动结束采矿\n"
+                       "  move.<方向> —— 离开矿洞";
                 break;
             case AtTown:
-                place = "小镇";
-                cmds = "market.status | market.buy --shop <seed/grocery> --item <名称> --count <N> "
-                       "| market.sell --item <名称> --count <N> "
-                       "| blacksmith.status | blacksmith.repair --tool <hoe/rod/pickaxe> --method <ore/gold> "
-                       "| move.<方向>";
+                place = "小镇（集市所在地）";
+                cmds = "  market.status —— 查看集市行情\n"
+                       "  market.buy --shop <seed/grocery> --item <名称> [--count N] —— 购物\n"
+                       "  market.sell --item <名称> [--count N] —— 出售背包物品\n"
+                       "  blacksmith.status —— 查看铁匠铺修复信息\n"
+                       "  blacksmith.repair --tool <hoe/rod/pickaxe> --method <gold/ore> —— 修复工具\n"
+                       "  move.<方向> —— 离开小镇";
                 break;
         }
-        return std::string("【") + place + "】" + cmds
-             + "；通用：time.now | weather.now | tools.status | save | help | quit";
+        return "【" + std::string(place) + "】当前可用指令：\n" + cmds
+             + "\n通用指令：time.now 时间 | weather.now 天气 | tools.status 工具耐久"
+               " | save 存档 | load 读档 | help 帮助 | quit 退出";
     };
 
     // 每次输入前先打印当前位置的输入格式提示，再输出命令提示符。

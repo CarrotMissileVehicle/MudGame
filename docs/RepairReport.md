@@ -124,6 +124,8 @@
 
 **验证**：新增 `tests/view/panel_render_test.cpp` 用例 `InputHintPrintInputFormatPrefix`（断言输出 `输入格式：…`）。`view_panel_test` 通过；实际冒烟：小屋显示 `【小屋】…`，`move.up` 到小镇后显示 `【小镇】… blacksmith.status | blacksmith.repair …`。
 
+> **补充优化（后续）**：提示改为多行中文——按位置分行列出每条指令并附中文说明（如 `farm.sow --plot <0-N> --crop <…> —— 播种`），末尾附通用指令行（含中文释义）；错误信息改为中文显示：`src/View/Cmdparser/src/input_parser.cpp` 将 CLI11 的 `ParseError` 按类型（缺参 RequiredError / 类型 ConversionError / 数量 ArgumentMismatch / 多余 ExtrasError / 未知选项 OptionNotFound）转译为中文提示，回退时保留原始英文内容。交互与冒烟已验证。
+
 ---
 
 ## 阶段 8：接入存档 / 读档
