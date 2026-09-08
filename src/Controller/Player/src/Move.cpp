@@ -36,33 +36,32 @@ Move::Move(Player& player) : player(player) {
 bool Move::GoUp() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(pos->GoUp());
+    return MoveTo(std::unique_ptr<Position>(pos->GoUp()));
 }
 
 bool Move::GoDown() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(pos->GoDown());
+    return MoveTo(std::unique_ptr<Position>(pos->GoDown()));
 }
 
 bool Move::GoLeft() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(pos->GoLeft());
+    return MoveTo(std::unique_ptr<Position>(pos->GoLeft()));
 }
 
 bool Move::GoRight() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(pos->GoRight());
+    return MoveTo(std::unique_ptr<Position>(pos->GoRight()));
 }
 
-bool Move::MoveTo(Position* newPos) {
+bool Move::MoveTo(std::unique_ptr<Position> newPos) {
     if (newPos == nullptr) {
         return false;
     }
     player.SetPosition(newPos->GetCode());
     player.SetState(StateCode::Waiting);
-    delete newPos;
-    return true;
+    return true;   // newPos 随 unique_ptr 离开作用域自动释放（DEF-011）
 }

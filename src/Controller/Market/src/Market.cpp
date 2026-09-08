@@ -1,9 +1,19 @@
 #include "../include/Market.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <cstddef>
 #include <cstdint>
+#include <random>
+
+namespace
+{
+    // DEF-012：thread_local 引擎收敛全局 rand（多线程调用安全）。
+    std::mt19937& rng()
+    {
+        static thread_local std::mt19937 gen(std::random_device{}());
+        return gen;
+    }
+}
 
 Market::Market(int dayOfWeek, int dayOfMonth)
         : dayOfWeek(dayOfWeek), dayOfMonth(dayOfMonth) {}
@@ -79,14 +89,15 @@ int Market::updateFluctuations() {
     fluctuations.clear();
 
     // 每天选择 2-3 种商品浮动 ±30%
-    int count = 2 + std::rand() % 2;      // 2 或 3
+    int count = 2 + std::uniform_int_distribution<int>(0, 1)(rng());      // 2 或 3
     count = std::min(count, static_cast<int>(candidates.size()));
 
     for (int i = 0; i < count; ++i) {
-        int index = std::rand() % static_cast<int>(candidates.size());
+        int index = std::uniform_int_distribution<int>(
+            0, static_cast<int>(candidates.size()) - 1)(rng());
         Object* item = candidates[index];
         // 偏移 [-0.30, 0.30]
-        float offset = (static_cast<float>(std::rand()) / RAND_MAX - 0.5f) * 0.6f;
+        float offset = (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng()) - 0.5f) * 0.6f;
         float factor = 1.0f + offset;
         fluctuations[item] = factor;
     }
@@ -129,22 +140,22 @@ int Market::getBuyPrice(const std::string& shopId, Object* item) const {
 }
 
 bool Market::buy(const std::string& shopId, Object* item,
-                 int count, int& gold) {
+                 int count, long long& gold) {
     if (count <= 0) return false;
     int price = getBuyPrice(shopId, item);
     if (price <= 0) return false;
     // count 可能较大（万分位计 → 千余），用 64 位算总额避免 int 溢出
     const long long total = static_cast<long long>(price) * count;
     if (gold < total) return false;   // 金币不足
-    gold -= static_cast<int>(total);
+    gold -= total;                    // DEF-007：全程 64 位回写，不再截断
     return true;
 }
 
-int Market::sell(Object* item, int count, int& gold) {
+long long Market::sell(Object* item, int count, long long& gold) {
      if (item == nullptr || count <= 0) return 0;
     int price = getSellPrice(item);
     if (price <= 0) return 0;
     const long long total = static_cast<long long>(price) * count;
-    gold += static_cast<int>(total);
-    return static_cast<int>(total);
+    gold += total;                    // DEF-007：全程 64 位回写，不再截断
+    return total;
 }

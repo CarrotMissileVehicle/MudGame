@@ -8,7 +8,7 @@
 #include <sstream>
 
 bool PlayerSerializer::Save(const std::string& filename, const Player& player, const Game& game,
-                            int gold, const mud::tool::ToolController& tools,
+                            long long gold, const mud::tool::ToolController& tools,
                             std::int64_t totalGameMinutes) {
     std::ofstream file(filename);
     if (!file.is_open()) {
@@ -66,7 +66,7 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player) {
     return Save(filename, player, game, 0, mud::tool::ToolController{}, 0);
 }
 
-bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& game, int& gold,
+bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& game, long long& gold,
                             mud::tool::ToolController& tools, std::int64_t& totalGameMinutes) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -77,10 +77,9 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     StateCode state = Waiting;
     int satiety = 100, maxSatiety = 100;
     int farmingExp = 0, fishExp = 0, mineExp = 0;
-    int goldInFile = 0;
+    long long goldInFile = 0;   // DEF-007：金币 64 位，支持大额数值
     bool hasGold = false;
     bool hasTotalMinutes = false;
-
     long long saveOpenYear = 0, saveOpenMonth = 1, saveOpenDay = 0, saveOpenHour = 0, saveOpenMinute = 0;
     long long totalPlaySeconds = 0;
 
@@ -113,7 +112,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
             } else if (key == "mineExp") {
                 mineExp = std::stoi(value);
             } else if (key == "gold") {
-                goldInFile = std::stoi(value);
+                goldInFile = std::stoll(value);
                 hasGold = true;
             } else if (key == "saveOpenYear") {
                 saveOpenYear = std::stoll(value);
@@ -207,7 +206,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
 
 bool PlayerSerializer::Load(const std::string& filename, Player& player) {
     Game game;
-    int gold = 0;
+    long long gold = 0;
     mud::tool::ToolController tools;
     std::int64_t total = -1;
     return Load(filename, player, game, gold, tools, total);

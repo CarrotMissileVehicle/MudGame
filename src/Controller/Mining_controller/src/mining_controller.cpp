@@ -246,6 +246,7 @@ std::string MiningController::random_ore(
     const mining::MiningContext& context
 ) const
 {
+    (void)context; // 预留的上下文参数，当前产出仅由层数据决定
     std::string key;
     if (!layer_key_for(layer_id, key))
         return {};

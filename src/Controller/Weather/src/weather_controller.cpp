@@ -6,9 +6,10 @@
 namespace
 {
     // 返回 1~100 的随机整数，供当日事件判定用
+    // DEF-005：thread_local 引擎，多线程同时判定亦无数据竞争（与 mining 模块约定一致）。
     int roll_1_to_100()
     {
-        static std::mt19937 gen(std::random_device{}());
+        static thread_local std::mt19937 gen(std::random_device{}());
         std::uniform_int_distribution<int> dist(1, 100);
         return dist(gen);
     }

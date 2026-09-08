@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <ctime>
 #include <map>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -41,7 +42,7 @@
 #include "Cabbage.h"
 #include "Carrot.h"
 #include "Tomato.h"
-#include "Punpkin.h"
+#include "Pumpkin.h"
 #include "Lingzhi.h"
 #include "NormalFertilizer.h"
 #include "AdvancedFertilizer.h"
@@ -91,12 +92,28 @@ namespace
         try { return std::stoll(it->second); }
         catch (...) { return fallback; }
     }
+
+    // 从命令 options 读取浮点型命名参数，缺省/非法返回 fallback（DEF-004：防未捕获异常）。
+    double opt_double(const mud::cmd::Command& cmd, const std::string& key, double fallback)
+    {
+        const auto it = cmd.options.find(key);
+        if (it == cmd.options.end())
+            return fallback;
+        try { return std::stod(it->second); }
+        catch (...) { return fallback; }
+    }
+
+    // 线程安全的均匀随机整数 [lo, hi]（DEF-012：收敛全局 rand 到 thread_local 引擎）。
+    int rand_range(int lo, int hi)
+    {
+        static thread_local std::mt19937 gen(std::random_device{}());
+        return std::uniform_int_distribution<int>(lo, hi)(gen);
+    }
 } // namespace
 
 int main()
 {
     SetConsoleOutputCP(65001);
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
 
     Game game;
     game.startSession();
@@ -112,9 +129,11 @@ int main()
     Farm farm({FarmLand(), FarmLand(), FarmLand(), FarmLand()});
     FarmingController farming(&farm);
 
-    // ---- 作物/肥料原型（堆栈持有，地块仅保存非拥有指针）----
-    Cabbage cabbage; Carrot carrot; Tomato tomato; Pumpkin pumpkin; Lingzhi lingzhi;
-    NormalFertilizer normalFert; AdvancedFertilizer advancedFert;
+    // ---- 作物/肥料原型 ----
+    // DEF-015：原型对象使用 static 存储期（生命周期覆盖整个进程），
+    // 地块/商店仅保存非拥有指针，杜绝栈对象逃逸后的悬垂引用。
+    static Cabbage cabbage; static Carrot carrot; static Tomato tomato; static Pumpkin pumpkin; static Lingzhi lingzhi;
+    static NormalFertilizer normalFert; static AdvancedFertilizer advancedFert;
 
     const std::map<std::string, Crop*> kSeeds = {
         {"cabbage", &cabbage}, {"carrot", &carrot}, {"tomato", &tomato},
@@ -123,8 +142,9 @@ int main()
         {&cabbage, "小白菜"}, {&carrot, "胡萝卜"}, {&tomato, "番茄"},
         {&pumpkin, "南瓜"},  {&lingzhi, "灵芝"}};
 
-    // ---- 鱼池（堆栈持有，钓到即复制入背包，绝不共享指针）----
-    Crucian crucian; GrassCarp grassCarp; Perch perch; RainbowTrout rainbowTrout; KingCrab kingCrab;
+    // ---- 鱼池 ----
+    // DEF-015：static 存储期（钓到即复制入背包，绝不共享指针）。
+    static Crucian crucian; static GrassCarp grassCarp; static Perch perch; static RainbowTrout rainbowTrout; static KingCrab kingCrab;
     const std::vector<Fish*> kFishPool = {&crucian, &grassCarp, &perch, &rainbowTrout, &kingCrab};
     const std::map<const Fish*, std::string> kFishNames = {
         {&crucian, "小鲫鱼"}, {&grassCarp, "草鱼"}, {&perch, "鲈鱼"},
@@ -132,15 +152,15 @@ int main()
     FishingController fishing(kFishPool, 0.3f);
 
     // ---- 集市 ----
-    // 商店货架商品：独立的具名 Object 实例（价格对齐对应作物/肥料），
-    // 生命周期与 main 一致；购买会向背包复制新对象。
-    Object seedCabbage{"小白菜种子", "种下后收获小白菜", 0, 8, 5};
-    Object seedCarrot{"胡萝卜种子", "种下后收获胡萝卜", 0, 10, 8};
-    Object seedTomato{"番茄种子", "种下后收获番茄", 0, 12, 10};
-    Object seedPumpkin{"南瓜种子", "种下后收获南瓜", 0, 15, 15};
-    Object seedLingzhi{"灵芝孢子", "种下后收获灵芝", 0, 20, 25};
-    Object fertNormal{"普通肥料", "生长周期减半", 0, 10, 15};
-    Object fertAdvanced{"高级肥料", "生长周期加速", 0, 25, 30};
+    // 商店货架商品：独立的具名 Object 实例（价格对齐对应作物/肥料）。
+    // DEF-015：static 存储期（与 main 同生命周期）；购买会向背包复制新对象。
+    static Object seedCabbage{"小白菜种子", "种下后收获小白菜", 0, 8, 5};
+    static Object seedCarrot{"胡萝卜种子", "种下后收获胡萝卜", 0, 10, 8};
+    static Object seedTomato{"番茄种子", "种下后收获番茄", 0, 12, 10};
+    static Object seedPumpkin{"南瓜种子", "种下后收获南瓜", 0, 15, 15};
+    static Object seedLingzhi{"灵芝孢子", "种下后收获灵芝", 0, 20, 25};
+    static Object fertNormal{"普通肥料", "生长周期减半", 0, 10, 15};
+    static Object fertAdvanced{"高级肥料", "生长周期加速", 0, 25, 30};
     Market market;
     Shop seedShop("seed", "种子商店");
     seedShop.addItem(ShopItem(&seedCabbage));
@@ -157,7 +177,7 @@ int main()
     market.registerShop(groceryShop);
     market.registerShop(blacksmithShop);
     market.onNewDay(timeService.now()); // 同步集市日历到当前游戏时间
-    int gold = 200;
+    long long gold = 200;   // DEF-007：金币全程 64 位，防大额交易截断
 
     // ---- 天气 ----
     WeatherController weather(timeService, farm);
@@ -178,6 +198,11 @@ int main()
     InputParser parser;
     Connector connector;
     HandlerContext ctx{timeService, miningHandler};
+
+    // worldMutex 串行化「后台时间推进」与「REPL 命令执行」对共享世界状态的访问。
+    // 声明于处理器注册之前：mine.start / fish.tick 等长交互命令在锁外跑等待循环、
+    // 仅对状态读写分段短暂加锁（DEF-003），需要按引用捕获本互斥量。
+    std::mutex worldMutex;
 
     // ================= DTO 装配（组合根 → View 的唯一数据通道）=================
     const auto make_time_view = [&]() -> mud::view::TimeView {
@@ -202,8 +227,8 @@ int main()
         return w;
     };
 
-    const auto make_player_status = [&]() -> PlayerStatus {
-        PlayerStatus s;
+    const auto make_player_status = [&]() -> mud::view::PlayerStatus {
+        mud::view::PlayerStatus s;
         s.position = player.GetPosition();
         s.state = player.GetState();
         s.satiety = player.GetSatiety();
@@ -372,8 +397,7 @@ int main()
     // 期间逐帧轮询键盘——按下 q/Q 立即返回 true（用户请求退出），
     // 等待自然结束返回 false。返回 true 时已排空残留输入，避免污染 REPL。
     const auto wait_action = [&]() -> bool {
-        const int wait_ms =
-            kActionWaitMinMs + std::rand() % (kActionWaitMaxMs - kActionWaitMinMs + 1);
+        const int wait_ms = rand_range(kActionWaitMinMs, kActionWaitMaxMs);
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(wait_ms);
         while (std::chrono::steady_clock::now() < deadline)
         {
@@ -399,11 +423,13 @@ int main()
         mc.has_torch = true;      // 演示：默认持有照明
         mc.has_lantern = true;
         const int pick = tools.level(mud::tool::ToolId::Pickaxe);
+        // DEF-014：显式列出全部档位；0/1 级与异常值统一归最低速 Core。
         switch (pick) {
             case 5: mc.tool.mining_speed = mining::MiningSpeed::Iron;    break;
             case 4: mc.tool.mining_speed = mining::MiningSpeed::Silver;  break;
             case 3: mc.tool.mining_speed = mining::MiningSpeed::Gold;    break;
             case 2: mc.tool.mining_speed = mining::MiningSpeed::Crystal; break;
+            case 1:
             default: mc.tool.mining_speed = mining::MiningSpeed::Core;   break;
         }
         mc.tool.interval = std::max<std::int64_t>(1, 7 - pick); // 矿镐等级越高，单次采矿间隔越短
@@ -462,38 +488,56 @@ int main()
     // 采矿
     // 前置校验：位置 / 层条件；然后在前台做"等待 3-6 秒出一次结果"的循环，
     // 期间不可操作，按 q 键退出并回到指令模式（不再依赖后台按游戏分钟结算）。
+    // DEF-003：本命令由主循环在锁外派发；等待循环不持锁，仅对每轮
+    // 状态读写（采矿产出 / 背包入包）短暂加锁，后台时间线程不再被饿死。
     connector.bind("mine.start", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtMine) {
-            msg("你不在矿区。");
-            return HandlerResult::Failed;
+        std::size_t layer;
+        mining::MiningContext mc;
+        {
+            std::lock_guard<std::mutex> lock(worldMutex);
+            if (player.GetPosition() != AtMine) {
+                msg("你不在矿区。");
+                return HandlerResult::Failed;
+            }
+            layer = static_cast<std::size_t>(opt_int(cmd, "layer", 0));
+            mc = build_mine_ctx();
+            if (!miningController.can_enter(layer, mc)) {
+                msg("层条件不满足（等级或照明不足）。");
+                return HandlerResult::Failed;
+            }
+            player.SetState(StateCode::Mining);
         }
-        const std::size_t layer = static_cast<std::size_t>(opt_int(cmd, "layer", 0));
-        const auto mc = build_mine_ctx();
-        if (!miningController.can_enter(layer, mc)) {
-            msg("层条件不满足（等级或照明不足）。");
-            return HandlerResult::Failed;
-        }
-        player.SetState(StateCode::Mining);
         msg("开始采矿（层 " + std::to_string(layer) + "）：每轮等待 3-6 秒后出矿，"
             "期间不可操作，按 q 退出。");
         int cycles = 0;
         bool stop = false;
         while (true) {
-            if (wait_action()) {          // 等待 3-6 秒（按 q 中止）
+            if (wait_action()) {          // 等待 3-6 秒（按 q 中止；锁外）
                 stop = true;
                 break;
             }
-            auto result = miningController.produce_once(layer, mc);
-            if (!result) {
+            bool broken = false;
+            {
+                std::lock_guard<std::mutex> lock(worldMutex);
+                auto result = miningController.produce_once(layer, mc);
+                if (!result) {
+                    broken = true;
+                } else {
+                    ++cycles;
+                    std::vector<mining::MiningResult> batch;
+                    batch.push_back(std::move(*result));
+                    grant_mining(batch);
+                }
+            }
+            if (broken) {
                 msg("矿镐损坏或矿洞塌方，采矿中断。");
                 break;
             }
-            ++cycles;
-            std::vector<mining::MiningResult> batch;
-            batch.push_back(std::move(*result));
-            grant_mining(batch);
         }
-        player.SetState(StateCode::Waiting);
+        {
+            std::lock_guard<std::mutex> lock(worldMutex);
+            player.SetState(StateCode::Waiting);
+        }
         msg(stop ? "采矿结束（手动退出），共出矿 " + std::to_string(cycles) + " 次。"
                  : "采矿结束，共出矿 " + std::to_string(cycles) + " 次。");
         return HandlerResult::Ok;
@@ -523,7 +567,11 @@ int main()
     });
 
     connector.bind("time.scale", [&](const mud::cmd::Command& cmd, const HandlerContext& ctx2) {
-        const double factor = std::stod(cmd.options.at("factor"));
+        // DEF-004：缺参/非法参数回退当前倍率并提示用法，不再抛未捕获异常。
+        const double factor = opt_double(cmd, "factor", ctx2.time.time_scale());
+        if (!cmd.options.count("factor")) {
+            msg("用法：time.scale --factor <倍率>（当前 " + std::to_string(ctx2.time.time_scale()) + "）。");
+        }
         ctx2.time.set_time_scale(factor);
         terminal.render_time_scale(factor);
         return HandlerResult::Ok;
@@ -670,46 +718,64 @@ int main()
     });
 
     connector.bind("fish.tick", [&](const mud::cmd::Command&, const HandlerContext&) {
-        if (player.GetPosition() != AtCoast) {
-            msg("你不在海边。");
-            return HandlerResult::Failed;
+        // DEF-003：本命令由主循环在锁外派发；等待循环不持锁，
+        // 仅对每轮垂钓的状态读写短暂加锁，后台时间线程不再被饿死。
+        {
+            std::lock_guard<std::mutex> lock(worldMutex);
+            if (player.GetPosition() != AtCoast) {
+                msg("你不在海边。");
+                return HandlerResult::Failed;
+            }
+            if (!weather.can_fish()) {
+                msg(weather.weather_name() + "天不能钓鱼。");
+                return HandlerResult::Failed;
+            }
+            if (player.GetSatiety() <= 0) {
+                msg("体力不足，无法钓鱼。");
+                return HandlerResult::Failed;
+            }
+            player.SetState(StateCode::Fishing);
         }
-        if (!weather.can_fish()) {
-            msg(weather.weather_name() + "天不能钓鱼。");
-            return HandlerResult::Failed;
-        }
-        if (player.GetSatiety() <= 0) {
-            msg("体力不足，无法钓鱼。");
-            return HandlerResult::Failed;
-        }
-        player.SetState(StateCode::Fishing);
         int caught = 0;
         msg("开始钓鱼：每轮等待 3-6 秒后出结果，期间不可操作，按 q 退出。");
         bool stop = false;
         while (true) {
-            if (wait_action()) {          // 等待 3-6 秒（按 q 中止）
+            if (wait_action()) {          // 等待 3-6 秒（按 q 中止；锁外）
                 stop = true;
                 break;
             }
-            // 每轮垂钓消耗体力（饱食度）
-            if (player.GetSatiety() <= 0) {
+            // 每轮垂钓消耗体力（饱食度，钳制非负——DEF-009）
+            bool exhausted = false;
+            std::string line_msg;
+            {
+                std::lock_guard<std::mutex> lock(worldMutex);
+                if (player.GetSatiety() <= 0) {
+                    exhausted = true;
+                } else {
+                    player.SetSatiety(std::max(0, player.GetSatiety() - kFishingSatietyCost));
+                    Fish* f = fishing.tickFish();
+                    if (f == nullptr) {
+                        line_msg = "  这一轮没有钓到鱼。";
+                    } else {
+                        const std::string fname = kFishNames.at(f);
+                        player.GetBag().AddObject(new Object(fname, "刚钓上来的鱼", 0,
+                            f->GetSellingPrice(), f->GetBuyingPrice()));
+                        player.SetFishExp(player.GetFishExp() + f->getFishExp());
+                        line_msg = "  钓到 " + fname + "！";
+                        ++caught;
+                    }
+                }
+            }
+            if (exhausted) {
                 msg("体力耗尽，钓鱼停止。");
                 break;
             }
-            player.SetSatiety(player.GetSatiety() - kFishingSatietyCost);
-            Fish* f = fishing.tickFish();
-            if (f == nullptr) {
-                msg("  这一轮没有钓到鱼。");
-                continue;
-            }
-            const std::string fname = kFishNames.at(f);
-            player.GetBag().AddObject(new Object(fname, "刚钓上来的鱼", 0,
-                f->GetSellingPrice(), f->GetBuyingPrice()));
-            player.SetFishExp(player.GetFishExp() + f->getFishExp());
-            msg("  钓到 " + fname + "！");
-            ++caught;
+            msg(line_msg);
         }
-        player.SetState(StateCode::Waiting);
+        {
+            std::lock_guard<std::mutex> lock(worldMutex);
+            player.SetState(StateCode::Waiting);
+        }
         msg(stop ? "钓鱼结束（手动退出），共钓到 " + std::to_string(caught) + " 条鱼。"
                  : "钓鱼结束，共钓到 " + std::to_string(caught) + " 条鱼。");
         return HandlerResult::Ok;
@@ -768,7 +834,7 @@ int main()
             player.GetBag().AddObject(new Object(item->GetName(), item->GetDescription(),
                 item->GetHealth(), item->GetSellingPrice(), item->GetBuyingPrice()));
         msg("购入 " + item->GetName() + " x" + std::to_string(count)
-            + "（花费 " + std::to_string(price * count) + "）。");
+            + "（花费 " + std::to_string(static_cast<long long>(price) * static_cast<long long>(count)) + "）。");
         return HandlerResult::Ok;
     });
 
@@ -819,7 +885,7 @@ int main()
             msg("背包里没有：" + item_name);
             return HandlerResult::BadArgument;
         }
-        const int gained = market.sell(item, static_cast<int>(sell_count), gold);
+        const long long gained = market.sell(item, static_cast<int>(sell_count), gold);
         player.GetBag().RemoveObject(item_name, static_cast<int>(sell_count));
         msg("出售" + item_name + " x" + std::to_string(sell_count) + "，获得金币 "
             + std::to_string(gained) + "。");
@@ -934,10 +1000,6 @@ int main()
     });
 
     // ================= 自动时间推进（真实时间后台） =================
-    // worldMutex 串行化「后台推进」与「REPL 命令执行」：命令处理与逐分钟更新
-    // 共享 farm/market/weather/player/mining 等状态，必须互斥。
-    std::mutex worldMutex;
-
     // 后台线程每现实秒调 timeService.update()（按 time_scale 推进游戏时间）
     // 并驱动世界推进；quit 时经 jthread 请求停止并自动 join。
     std::jthread timeThread([&](std::stop_token st) {
@@ -974,7 +1036,11 @@ int main()
             // 解析失败消息已由解析器输出
         } else {
             HandlerResult result;
-            {
+            if (verb == "mine.start" || verb == "fish.tick") {
+                // 长交互命令：handler 内部对状态读写分段加锁，交互等待在锁外，
+                // 避免饿死后台时间线程（DEF-003）。
+                result = connector.dispatch(cmd, ctx);
+            } else {
                 std::lock_guard<std::mutex> lock(worldMutex);
                 result = connector.dispatch(cmd, ctx);
             }

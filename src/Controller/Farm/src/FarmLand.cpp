@@ -1,5 +1,7 @@
 #include "../include/farmland.h"
 
+#include <algorithm>
+
 FarmLand::FarmLand(Crop* crop)
         : crop(crop) {
     occupied = (crop != nullptr);
@@ -34,8 +36,13 @@ bool FarmLand::water() {
 
 void FarmLand::fertilize(int speedUp) {
     // speedUp: 剩余生长周期的加速除数（2 减半，3 减为 1/3）
+    // DEF-008：按「周期/speedUp」直接补贴生长进度——播种后立即施肥同样有效
+    // （等价于总周期缩短为 1/speedUp），补贴后钳制到周期上限防越界展示。
     if (!occupied || speedUp <= 0) return;
-    growthStage += growthStage / speedUp;
+    const int cycle = (crop != nullptr) ? crop->getGrowthCycle() : 0;
+    if (cycle <= 0) return;
+    growthStage += std::max(1, cycle / speedUp);
+    if (growthStage > cycle) growthStage = cycle;
 }
 
 int FarmLand::harvest() {
