@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <map>
 #include <string>
 
 #include "tool.h"
@@ -65,6 +66,8 @@ namespace mud::tool
         void restore(ToolId id, int level, int durability);
 
     private:
-        Tool tools_[3]; // 下标对应 ToolId（Hoe=0/Rod=1/Pickaxe=2）
+        // DEF-006：以 ToolId 为键的 map 存储，按 id 查找工具，
+        // 消除「枚举序 == 数组下标」的隐式耦合（重排枚举也不会错配）。
+        std::map<ToolId, Tool> tools_;
     };
 }

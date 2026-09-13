@@ -1,7 +1,7 @@
 #include "weather.h"
 
 #include <cstddef>
-#include <cstdlib>
+#include <random>
 
 namespace mud::weather
 {
@@ -16,12 +16,28 @@ namespace mud::weather
             { WeatherType::Typhoon, "台风",   0.05, false, 0.35, 0.00, 0.00, false, false },
         };
         const std::size_t kCount = sizeof(kConfigs) / sizeof(kConfigs[0]);
+
+        // DEF-006：按 type 字段查表（不依赖枚举序与数组序一致的隐式约定）；
+        // 未知枚举值兜底到晴天配置，杜绝静默越界读。
+        const WeatherConfig& config_for(WeatherType type)
+        {
+            for (std::size_t i = 0; i < kCount; ++i)
+                if (kConfigs[i].type == type) return kConfigs[i];
+            return kConfigs[0];
+        }
+
+        // DEF-012：thread_local 引擎收敛全局 rand（多线程调用安全）。
+        std::mt19937& rng()
+        {
+            static thread_local std::mt19937 gen(std::random_device{}());
+            return gen;
+        }
     }
 
     void Weather::generate_daily()
     {
         // 简单随机：生成 0~1 的均匀小数，落在哪段累计概率就选哪种天气
-        double roll = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+        double roll = std::uniform_real_distribution<double>(0.0, 1.0)(rng());
         double acc = 0.0;
         for (std::size_t i = 0; i < kCount; ++i) {
             acc += kConfigs[i].probability;
@@ -58,21 +74,21 @@ namespace mud::weather
 
     bool Weather::auto_water() const noexcept
     {
-        return kConfigs[static_cast<std::size_t>(current())].auto_water;
+        return config_for(current()).auto_water;
     }
 
     double Weather::crop_loss_rate() const noexcept
     {
-        return kConfigs[static_cast<std::size_t>(current())].crop_loss;
+        return config_for(current()).crop_loss;
     }
 
     double Weather::mining_exp_bonus() const noexcept
     {
-        return kConfigs[static_cast<std::size_t>(current())].mining_exp_bonus;
+        return config_for(current()).mining_exp_bonus;
     }
 
     double Weather::fishing_penalty() const noexcept
     {
-        return kConfigs[static_cast<std::size_t>(current())].fishing_penalty;
+        return config_for(current()).fishing_penalty;
     }
 }

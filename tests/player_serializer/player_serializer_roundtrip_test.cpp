@@ -51,7 +51,7 @@ TEST(PlayerSerializerRoundTrip, FullFieldsSurvive)
 
     Player dst;
     Game dstGame;
-    int dstGold = 0;
+    long long dstGold = 0;
     mud::tool::ToolController dstTools;
     std::int64_t dstMin = -1;
     ASSERT_TRUE(ser.Load(path.string(), dst, dstGame, dstGold, dstTools, dstMin));
@@ -98,7 +98,7 @@ TEST(PlayerSerializerRoundTrip, LoadReplacesBagContentsWithoutDoubleFree)
     Player dst(AtMine, Mining, 100, 100, 0, 0, 0);
     dst.GetBag().AddObject(new Object("旧物", "占位", 0, 1, 1)); // 读档前旧背包内容
     Game dstGame2;
-    int dstGold2 = 0;
+    long long dstGold2 = 0;
     mud::tool::ToolController dstTools2;
     std::int64_t dstMin2 = -1;
     ASSERT_TRUE(ser.Load(path.string(), dst, dstGame2, dstGold2, dstTools2, dstMin2));
@@ -128,7 +128,7 @@ TEST(PlayerSerializerRoundTrip, LegacySaveKeepsCallerDefaults)
         file << "bagCount=0\n";
     }
 
-    int gold = 777;
+    long long gold = 777;
     mud::tool::ToolController tools;
     tools.use_tool(mud::tool::ToolId::Pickaxe); // 调用方已有耐久状态
     const int intactDura = tools.durability(mud::tool::ToolId::Pickaxe);

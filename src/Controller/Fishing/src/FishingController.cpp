@@ -1,6 +1,16 @@
 #include "../include/FishingController.h"
 
-#include <cstdlib>
+#include <random>
+
+namespace
+{
+    // DEF-012：thread_local 引擎收敛全局 rand（多线程调用安全）。
+    std::mt19937& rng()
+    {
+        static thread_local std::mt19937 gen(std::random_device{}());
+        return gen;
+    }
+}
 
 FishingController::FishingController(const std::vector<Fish*>& fishPool, float catchRate)
         : fishPool(fishPool), catchRate(catchRate), baseCatchRate(catchRate), isDaytime(true) {}
@@ -13,7 +23,7 @@ Fish* FishingController::rollFish() const {
     float total = 0.0f;
     for (Fish* fish : fishPool) total += fish->getProbability();
 
-    double roll = static_cast<double>(std::rand()) / RAND_MAX * total;
+    double roll = std::uniform_real_distribution<double>(0.0, 1.0)(rng()) * total;
     float accumulated = 0.0f;
     for (Fish* fish : fishPool) {
         accumulated += fish->getProbability();
@@ -29,7 +39,7 @@ std::size_t FishingController::poolSize() const {
 Fish* FishingController::tickFish() {
     if (fishPool.empty()) return nullptr;
 
-    double roll = static_cast<double>(std::rand()) / RAND_MAX;
+    double roll = std::uniform_real_distribution<double>(0.0, 1.0)(rng());
     if (roll >= catchRate) return nullptr;
 
     return rollFish();

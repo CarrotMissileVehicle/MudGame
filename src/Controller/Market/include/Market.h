@@ -44,13 +44,13 @@ public:
     float getFluctuation(Object* item) const;   // 默认 1.0
 
     // ---- 交易 ----
-    // 从指定商店购买 item 的 count 份，从 gold 中扣款。
+    // 从指定商店购买 item 的 count 份，从 gold 中扣款（gold 为 64 位，DEF-007）。
     // 通过 item 传入空指针并将 gold 作为预算传入也可查询价格。
     bool buy(const std::string& shopId, Object* item,
-             int count, int& gold);
+             int count, long long& gold);
 
-    // 出售背包物品，将所得金币累加到 gold，返回实际出售获得金额
-    int sell(Object* item, int count, int& gold);
+    // 出售背包物品，将所得金币累加到 gold，返回实际出售获得金额（64 位，DEF-007）
+    long long sell(Object* item, int count, long long& gold);
 
     // 报价查询（含浮动与集市加成）
     int getSellPrice(Object* item) const;

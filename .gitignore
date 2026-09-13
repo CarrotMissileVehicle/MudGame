@@ -264,3 +264,9 @@ graphify-out/
 .graphify_*
 code-graph/
 
+# --- 本地缺陷分析报告（不上传 GitHub）---
+docs/defect_analysis_report.md
+docs/defect_analysis_report_master_20260908.md
+
+# --- 本地第三方依赖（pjh_json 拉取缓存等）---
+thirdparty/

@@ -14,9 +14,10 @@
 class PlayerSerializer {
 public:
     // 完整存档：玩家 + 游戏会话 + 金币 + 工具状态 + 游戏内时钟总分钟数
-    bool Save(const std::string& filename, const Player& player, const Game& game, int gold,
+    // 金币为 64 位（DEF-007：与 Market/main 的 long long gold 对齐）
+    bool Save(const std::string& filename, const Player& player, const Game& game, long long gold,
               const mud::tool::ToolController& tools, std::int64_t totalGameMinutes);
-    bool Load(const std::string& filename, Player& player, Game& game, int& gold,
+    bool Load(const std::string& filename, Player& player, Game& game, long long& gold,
               mud::tool::ToolController& tools, std::int64_t& totalGameMinutes);
 
     bool Save(const std::string& filename, const Player& player);
