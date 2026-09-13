@@ -58,6 +58,7 @@
 #include "KingCrab.h"
 #include "FishingController.h"
 #include "Market.h"
+#include "MarketController.h"
 #include "Shop.h"
 #include "ShopItem.h"
 
@@ -175,6 +176,8 @@ int main()
     market.registerShop(blacksmithShop);
     market.onNewDay(timeService.now()); // 同步集市日历到当前游戏时间
     long long gold = 200;
+    // 集市交易控制器：承载 market.buy/sell 完整业务流程（处理器下沉）
+    MarketController marketCtl(market, player.GetBag());
 
     // ---- 天气 ----
     WeatherController weather(timeService, farm);
@@ -563,13 +566,9 @@ int main()
     connector.bind("time.scale", [&](const mud::cmd::Command& cmd, const HandlerContext& ctx2)
     {
         double factor;
-        try
+        // DEF-102：数值校验下沉 cmdparser，非法倍率不再令 REPL 崩溃
+        if (!mud::cmd::parse_double(cmd.options.at("factor"), factor))
         {
-            factor = std::stod(cmd.options.at("factor"));
-        }
-        catch (...)
-        {
-            // DEF-102：非法倍率（非数字/超范围）不得令 REPL 崩溃
             msg("非法倍率：请输入数字（如 60、600）。");
             return HandlerResult::BadArgument;
         }
@@ -849,57 +848,26 @@ int main()
             return HandlerResult::Failed;
         }
         const std::string shop_id = cmd.options.count("shop") ? cmd.options.at("shop") : "";
-        const std::string item_name = cmd.options.count("item") ? cmd.options.at("item") : "";
-        const auto count = static_cast<std::size_t>(opt_int(cmd, "count", 1));
-        Shop* shop = market.findShop(shop_id);
-        if (shop == nullptr)
+        const std::string item_ref = cmd.options.count("item") ? cmd.options.at("item") : "";
+        const int count = static_cast<int>(opt_int(cmd, "count", 1));
+        // 业务流程（解析/扣款/入包/64 位总额）已下沉 MarketController
+        const auto r = marketCtl.buy(shop_id, item_ref, count, gold);
+        switch (r.status)
         {
+        case MarketController::BuyResult::Status::NoSuchShop:
             msg("没有这家商店：" + shop_id);
             return HandlerResult::BadArgument;
-        }
-        Object* item = nullptr;
-        const auto all_digits = [](const std::string& s)
-        {
-            if (s.empty()) return false;
-            for (char c : s) if (c < '0' || c > '9') return false;
-            return true;
-        };
-        if (all_digits(item_name))
-        {
-            const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "item", 0));
-            if (idx < shop->itemCount()) item = shop->getItem(idx).getItem();
-        }
-        else
-        {
-            for (std::size_t i = 0; i < shop->itemCount(); ++i)
-            {
-                Object* cand = shop->getItem(i).getItem();
-                if (cand != nullptr && cand->GetName() == item_name)
-                {
-                    item = cand;
-                    break;
-                }
-            }
-        }
-        if (item == nullptr)
-        {
-            msg("商店没有这种商品：" + item_name);
+        case MarketController::BuyResult::Status::NoSuchItem:
+            msg("商店没有这种商品：" + item_ref);
             return HandlerResult::BadArgument;
-        }
-        const int price = market.getBuyPrice(shop_id, item);
-        if (!market.buy(shop_id, item, static_cast<int>(count), gold))
-        {
+        case MarketController::BuyResult::Status::BuyRejected:
             msg("购买失败（金币不足或商品缺货）。");
             return HandlerResult::Failed;
+        case MarketController::BuyResult::Status::Ok:
+            break;
         }
-        for (std::size_t i = 0; i < count; ++i)
-            player.GetBag().AddObject(new Object(item->GetName(), item->GetDescription(),
-                                                 item->GetHealth(), item->GetSellingPrice(), item->GetBuyingPrice()));
-        // DEF-109：64 位计算总额，避免大金币/大数量下提示金额回绕
-        const long long spent =
-            static_cast<long long>(price) * static_cast<long long>(count);
-        msg("购入 " + item->GetName() + " x" + std::to_string(count)
-            + "（花费 " + std::to_string(spent) + "）。");
+        msg("购入 " + r.item_name + " x" + std::to_string(r.bought)
+            + "（花费 " + std::to_string(r.spent) + "）。");
         return HandlerResult::Ok;
     });
 
@@ -910,76 +878,23 @@ int main()
             msg("你不在城镇。");
             return HandlerResult::Failed;
         }
-        const std::string raw_item = cmd.options.count("item") ? cmd.options.at("item") : "";
-        const auto count = static_cast<std::size_t>(opt_int(cmd, "count", 1));
-        const auto all_digits = [](const std::string& s)
+        const std::string item_ref = cmd.options.count("item") ? cmd.options.at("item") : "";
+        const int count = static_cast<int>(opt_int(cmd, "count", 1));
+        // 业务流程（名字/序号解析、数量钳制、售价守卫、移物加钱）已下沉 MarketController
+        const auto r = marketCtl.sell(item_ref, count, gold);
+        switch (r.status)
         {
-            if (s.empty()) return false;
-            for (char c : s) if (c < '0' || c > '9') return false;
-            return true;
-        };
-        // 去重后的同名词（每个堆叠一项）
-        const auto& all_names = player.GetBag().GetAllObjectName();
-        std::string item_name;
-        if (all_digits(raw_item))
-        {
-            const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "item", 0));
-            if (idx >= all_names.size())
-            {
-                msg("背包里没有序号 " + std::to_string(idx) + " 的物品。");
-                return HandlerResult::BadArgument;
-            }
-            item_name = all_names[idx];
-        }
-        else
-        {
-            item_name = raw_item;
-            bool found = false;
-            for (const auto& n : all_names)
-                if (n == item_name)
-                {
-                    found = true;
-                    break;
-                }
-            if (!found)
-            {
-                msg("背包里没有：" + item_name);
-                return HandlerResult::BadArgument;
-            }
-        }
-        // 堆叠总数量
-        const int have = player.GetBag().CountObject(item_name);
-        const auto sell_count = static_cast<std::size_t>(std::min<long long>(
-            static_cast<long long>(count), static_cast<long long>(have)));
-        if (sell_count == 0)
-        {
-            msg("背包里没有：" + item_name);
+        case MarketController::SellResult::Status::NoSuchItem:
+            msg("背包里没有：" + item_ref);
             return HandlerResult::BadArgument;
-        }
-        Object* item = nullptr;
-        for (auto* obj : player.GetBag().GetObjects())
-        {
-            if (obj->GetName() == item_name)
-            {
-                item = obj;
-                break;
-            }
-        }
-        if (item == nullptr)
-        {
-            msg("背包里没有：" + item_name);
-            return HandlerResult::BadArgument;
-        }
-        const long long gained = market.sell(item, static_cast<int>(sell_count), gold);
-        if (gained <= 0)
-        {
-            // DEF-106：售价经浮动截断为 0 时不得移除物品（否则白送）
-            msg("出售失败：" + item_name + " 当前售价为 0。");
+        case MarketController::SellResult::Status::ZeroPrice:
+            msg("出售失败：" + r.item_name + " 当前售价为 0。");
             return HandlerResult::Failed;
+        case MarketController::SellResult::Status::Ok:
+            break;
         }
-        player.GetBag().RemoveObject(item_name, static_cast<int>(sell_count));
-        msg("出售" + item_name + " x" + std::to_string(sell_count) + "，获得金币 "
-            + std::to_string(gained) + "。");
+        msg("出售" + r.item_name + " x" + std::to_string(r.sold) + "，获得金币 "
+            + std::to_string(r.gained) + "。");
         return HandlerResult::Ok;
     });
 

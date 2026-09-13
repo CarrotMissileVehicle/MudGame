@@ -147,6 +147,7 @@ MarketController::sell(const std::string& item_ref, int count, long long& gold)
     if (gained <= 0)
     {
         // DEF-106：售价经浮动截断为 0 时不移除物品（否则白送）
+        result.item_name = item_name;
         result.status = SellResult::Status::ZeroPrice;
         return result;
     }
