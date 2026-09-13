@@ -36,6 +36,19 @@ FetchContent_Declare(pjh_json
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(pjh_json)
 
+# FTXUI：GitHub 上最受欢迎的 C++ TUI 库（10k+ stars，v7.0.3）。
+# 原仓库：https://github.com/ArthurSonzogni/FTXUI.git
+# 说明：当前网络无法直连 GitHub，故改用 Gitee 官方镜像镜像仓库（与 GitHub 内容/标签一致）。
+# 用于构建新的终端图形界面（日志区 / 输入框 / 动态完成列表 / 问题提示行）。
+FetchContent_Declare(ftxui
+    GIT_REPOSITORY https://gitee.com/mirrors/ftxui.git
+    GIT_TAG v7.0.3
+    GIT_SHALLOW TRUE)
+set(FTXUI_BUILD_EXAMPLES OFF CACHE BOOL "Disable FTXUI examples" FORCE)
+set(FTXUI_BUILD_DOCS OFF CACHE BOOL "Disable FTXUI docs" FORCE)
+set(FTXUI_BUILD_TESTS OFF CACHE BOOL "Disable FTXUI tests" FORCE)
+FetchContent_MakeAvailable(ftxui)
+
 add_subdirectory(src)
 
 # ---- 单元测试（CTest 开关控制，默认开启）----
@@ -85,7 +98,12 @@ target_link_libraries(MudGame PRIVATE
         tool_controller
         player_serializer
         view_panels
-        CLI11::CLI11)
+        view_tui
+        audio
+        CLI11::CLI11
+        ftxui::component
+        ftxui::dom
+        ftxui::screen)
 
 target_include_directories(MudGame PRIVATE
         src/Controller/Food/include
@@ -96,4 +114,11 @@ target_include_directories(MudGame PRIVATE
         src/Controller/Farming/include
         src/Controller/Fishing/include
         src/Controller/Market/include
+)
+
+# 注入资源目录（res/），供 main 定位背景音乐文件（模拟 MUDGAME_DATA_DIR 的做法）。
+set(MUDGAME_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
+file(TO_CMAKE_PATH ${MUDGAME_RES_DIR} MUDGAME_RES_DIR)
+target_compile_definitions(MudGame PRIVATE
+    MUDGAME_RES_DIR="${MUDGAME_RES_DIR}"
 )

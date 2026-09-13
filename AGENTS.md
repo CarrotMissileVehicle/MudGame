@@ -38,7 +38,7 @@ Key rules:
 
 ### Build architecture (two tiers — non-obvious)
 
-- **Standalone libs**: aggregated in `src/CMakeLists.txt` via `add_subdirectory` — `time_service`, `model_objects`, `bag`, `map`, `playerstates`, `food`, `crop`, `fertilizer`, `farm`, `game`, `mining_controller`, `player`, `player_serializer` (src/Tool), `tool_controller`, `weather_controller`, view libs, `cmd_parser`.
+- **Standalone libs**: aggregated in `src/CMakeLists.txt` via `add_subdirectory` — `time_service`, `model_objects`, `bag`, `map`, `playerstates`, `food`, `crop`, `fertilizer`, `farm`, `game`, `mining_controller`, `player`, `player_serializer` (src/Tool), `tool_controller`, `weather_controller`, `audio` (src/Audio, MCI looping BGM on `winmm`), view libs, `cmd_parser`.
 - **Jerry modules**: Food, Crop, Fertilizer, Farm, Fish, Farming, Fishing, Market live under `src/controller/` but are **not** separate library targets — their sources are listed in `JERRY_SOURCES` in the root `CMakeLists.txt` and compiled directly into the `MudGame` executable. `main.cpp` is the composition root (constructor-wires every subsystem, REPL loop + background time thread guarded by a `worldMutex`).
 
 This is why the root `CMakeLists.txt` adds their `include/` dirs to the executable target, and why the executable target must link the other libs in that specific list.

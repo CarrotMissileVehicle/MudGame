@@ -25,6 +25,7 @@ add_subdirectory(Controller/Player)      # player
 
 # ---- 工具 / 视图 ----
 add_subdirectory(Tool)                   # player_serializer
+add_subdirectory(Audio)                  # audio（MCI 循环背景音乐）
 add_subdirectory(Controller/Tool)        # tool_controller（工具模型/控制器）
 add_subdirectory(Controller/Weather)     # weather_controller（事件模型）
 add_subdirectory(View)                   # view_primitives + view_panels + cmd_parser

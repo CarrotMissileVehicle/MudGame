@@ -15,6 +15,7 @@ target_link_libraries(view_primitives
         time_service
 )
 
-# ---- 子视图模块：面板 / 命令解析 ----
+# ---- 子视图模块：面板 / 命令解析 / FTXUI 终端界面 ----
 add_subdirectory(Panels)
 add_subdirectory(Cmdparser)
+add_subdirectory(Tui)
