@@ -46,7 +46,7 @@
 #include "Cabbage.h"
 #include "Carrot.h"
 #include "Tomato.h"
-#include "Punpkin.h"
+#include "Pumpkin.h"
 #include "Lingzhi.h"
 #include "NormalFertilizer.h"
 #include "AdvancedFertilizer.h"
@@ -118,22 +118,34 @@ int main()
     FarmingController farming(&farm);
 
     // ---- 作物/肥料原型（堆栈持有，地块仅保存非拥有指针）----
-    Cabbage cabbage; Carrot carrot; Tomato tomato; Pumpkin pumpkin; Lingzhi lingzhi;
-    NormalFertilizer normalFert; AdvancedFertilizer advancedFert;
+    Cabbage cabbage;
+    Carrot carrot;
+    Tomato tomato;
+    Pumpkin pumpkin;
+    Lingzhi lingzhi;
+    NormalFertilizer normalFert;
+    AdvancedFertilizer advancedFert;
 
     const std::map<std::string, Crop*> kSeeds = {
         {"cabbage", &cabbage}, {"carrot", &carrot}, {"tomato", &tomato},
-        {"pumpkin", &pumpkin}, {"lingzhi", &lingzhi}};
+        {"pumpkin", &pumpkin}, {"lingzhi", &lingzhi}
+    };
     const std::map<const Crop*, std::string> kCropNames = {
         {&cabbage, "小白菜"}, {&carrot, "胡萝卜"}, {&tomato, "番茄"},
-        {&pumpkin, "南瓜"},  {&lingzhi, "灵芝"}};
+        {&pumpkin, "南瓜"}, {&lingzhi, "灵芝"}
+    };
 
     // ---- 鱼池（堆栈持有，钓到即复制入背包，绝不共享指针）----
-    Crucian crucian; GrassCarp grassCarp; Perch perch; RainbowTrout rainbowTrout; KingCrab kingCrab;
+    Crucian crucian;
+    GrassCarp grassCarp;
+    Perch perch;
+    RainbowTrout rainbowTrout;
+    KingCrab kingCrab;
     const std::vector<Fish*> kFishPool = {&crucian, &grassCarp, &perch, &rainbowTrout, &kingCrab};
     const std::map<const Fish*, std::string> kFishNames = {
         {&crucian, "小鲫鱼"}, {&grassCarp, "草鱼"}, {&perch, "鲈鱼"},
-        {&rainbowTrout, "虹鳟鱼"}, {&kingCrab, "帝王蟹"}};
+        {&rainbowTrout, "虹鳟鱼"}, {&kingCrab, "帝王蟹"}
+    };
     FishingController fishing(kFishPool, 0.3f);
 
     // ---- 集市 ----
@@ -162,20 +174,20 @@ int main()
     market.registerShop(groceryShop);
     market.registerShop(blacksmithShop);
     market.onNewDay(timeService.now()); // 同步集市日历到当前游戏时间
-    int gold = 200;
+    long long gold = 200;
 
     // ---- 天气 ----
     WeatherController weather(timeService, farm);
 
     // ---- 工具 / 采矿 ----
     mud::tool::ToolController tools;
-    Ore::OreData oreData{};           // 控制器仅持引用、无需数据文件内容
-    Ore oreTable;                     // 供玩家反馈名称/价格/用途
+    Ore::OreData oreData{}; // 控制器仅持引用、无需数据文件内容
+    Ore oreTable; // 供玩家反馈名称/价格/用途
     mud::event::EventSystem miningEvents;
     MiningController miningController(oreData, timeService, &miningEvents, &tools);
     MiningHandler miningHandler(miningController);
 
-// ---- 视图（View 层唯一输出出口）----
+    // ---- 视图（View 层唯一输出出口）----
     // 改用 FTXUI TUI：输出经 TuiRenderer 重定向到界面日志区。
     mud::tui::TuiState tuiState;
     mud::tui::TuiRenderer outRenderer(tuiState);
@@ -188,16 +200,21 @@ int main()
     HandlerContext ctx{timeService, miningHandler};
 
     // ================= DTO 装配（组合根 → View 的唯一数据通道）=================
-    const auto make_time_view = [&]() -> mud::view::TimeView {
+    const auto make_time_view = [&]() -> mud::view::TimeView
+    {
         const auto now = timeService.now();
         mud::view::TimeView t;
-        t.year = now.year; t.month = now.month; t.day = now.day;
-        t.hour = now.hour; t.minute = now.minute;
+        t.year = now.year;
+        t.month = now.month;
+        t.day = now.day;
+        t.hour = now.hour;
+        t.minute = now.minute;
         t.time_scale = timeService.time_scale();
         return t;
     };
 
-    const auto make_weather_view = [&]() -> mud::view::WeatherView {
+    const auto make_weather_view = [&]() -> mud::view::WeatherView
+    {
         mud::view::WeatherView w;
         w.weather = weather.weather_name();
         w.can_fish = weather.can_fish();
@@ -210,7 +227,8 @@ int main()
         return w;
     };
 
-    const auto make_player_status = [&]() -> PlayerStatus {
+    const auto make_player_status = [&]() -> PlayerStatus
+    {
         PlayerStatus s;
         s.position = player.GetPosition();
         s.state = player.GetState();
@@ -223,7 +241,8 @@ int main()
         return s;
     };
 
-    const auto make_farm_view = [&]() -> mud::view::FarmView {
+    const auto make_farm_view = [&]() -> mud::view::FarmView
+    {
         mud::view::FarmView f;
         for (std::size_t i = 0; i < farming.farmSize(); ++i)
         {
@@ -234,11 +253,13 @@ int main()
             if (fl.isOccupied())
             {
                 const std::string cname = kCropNames.count(fl.getCrop())
-                    ? kCropNames.at(fl.getCrop()) : "未知作物";
+                                              ? kCropNames.at(fl.getCrop())
+                                              : "未知作物";
                 p.crop_name = cname;
                 const int growthCycle = fl.getCrop()->getGrowthCycle();
                 p.growth_stage = fl.getGrowthStage() > growthCycle
-                    ? growthCycle : fl.getGrowthStage(); // 防御性钳制
+                                     ? growthCycle
+                                     : fl.getGrowthStage(); // 防御性钳制
                 p.growth_max = growthCycle;
                 p.watered = fl.isWatered();
             }
@@ -247,7 +268,8 @@ int main()
         return f;
     };
 
-    const auto make_fishing_view = [&]() -> mud::view::FishingView {
+    const auto make_fishing_view = [&]() -> mud::view::FishingView
+    {
         mud::view::FishingView f;
         for (const Fish* fish : kFishPool)
             f.pool.push_back({kFishNames.at(fish), fish->getProbability()});
@@ -255,7 +277,8 @@ int main()
         return f;
     };
 
-    const auto make_market_view = [&]() -> mud::view::MarketView {
+    const auto make_market_view = [&]() -> mud::view::MarketView
+    {
         mud::view::MarketView m;
         m.gold = gold;
         m.day_of_week = market.getDayOfWeek();
@@ -282,7 +305,8 @@ int main()
         return m;
     };
 
-    const auto make_tools_view = [&]() -> mud::view::ToolsView {
+    const auto make_tools_view = [&]() -> mud::view::ToolsView
+    {
         mud::view::ToolsView t;
         for (const auto id :
              {mud::tool::ToolId::Hoe, mud::tool::ToolId::Rod, mud::tool::ToolId::Pickaxe})
@@ -297,7 +321,8 @@ int main()
         return t;
     };
 
-    const auto make_mining_view = [&]() -> mud::view::MiningView {
+    const auto make_mining_view = [&]() -> mud::view::MiningView
+    {
         mud::view::MiningView m;
         m.is_mining = miningHandler.is_mining();
         m.layer = miningHandler.layer_id() ? *miningHandler.layer_id() : 0;
@@ -306,7 +331,8 @@ int main()
         return m;
     };
 
-    const auto make_blacksmith_view = [&]() -> mud::view::BlacksmithView {
+    const auto make_blacksmith_view = [&]() -> mud::view::BlacksmithView
+    {
         mud::view::BlacksmithView v;
         v.gold = gold;
         for (const auto id : {mud::tool::ToolId::Hoe, mud::tool::ToolId::Rod, mud::tool::ToolId::Pickaxe})
@@ -327,82 +353,93 @@ int main()
 
     // 输入格式提示：根据玩家当前位置给出可用指令的行动名称，供每次输入前展示。
     // 交互模式下用户只需输入行动名称（如 farm.sow），系统会逐个提示参数。
-    const auto input_hint = [&]() -> std::string {
+    const auto input_hint = [&]() -> std::string
+    {
         const char* place = nullptr;
         std::string cmds;
         switch (player.GetPosition())
         {
-            case AtHome:
-                place = "小屋（你的起点）";
-                cmds = "  player.status —— 查看角色状态\n"
-                       "  farm.status —— 查看农田概况\n"
-                       "  fish.status —— 查看鱼池概况\n"
-                       "  move.<up/down/left/right> —— 向对应方向移动";
-                break;
-            case AtFarmland:
-                place = "农田";
-                cmds = "  farm.status —— 查看农田\n"
-                       "  farm.sow —— 播种\n"
-                       "  farm.water —— 浇水\n"
-                       "  farm.fertilize —— 施肥\n"
-                       "  farm.harvest —— 收割\n"
-                       "  move.<方向> —— 离开农田";
-                break;
-            case AtCoast:
-                place = "海岸";
-                cmds = "  fish.status —— 查看鱼池\n"
-                       "  fish.tick —— 抛竿垂钓（每轮 3-6 秒，按 q 中止）\n"
-                       "  move.<方向> —— 离开海岸";
-                break;
-            case AtMine:
-                place = "矿洞";
-                cmds = "  mine.status —— 查看采矿状态\n"
-                       "  mine.start —— 开始采矿（每轮 3-6 秒，按 q 中止）\n"
-                       "  mine.stop —— 手动结束采矿\n"
-                       "  move.<方向> —— 离开矿洞";
-                break;
-            case AtTown:
-                place = "小镇（集市所在地）";
-                cmds = "  market.status —— 查看集市行情\n"
-                       "  market.buy —— 购物\n"
-                       "  market.sell —— 出售背包物品\n"
-                       "  blacksmith.status —— 查看铁匠铺修复信息\n"
-                       "  blacksmith.repair —— 修复工具\n"
-                       "  move.<方向> —— 离开小镇";
-                break;
+        case AtHome:
+            place = "小屋（你的起点）";
+            cmds = "  player.status —— 查看角色状态\n"
+                "  farm.status —— 查看农田概况\n"
+                "  fish.status —— 查看鱼池概况\n"
+                "  move.<up/down/left/right> —— 向对应方向移动";
+            break;
+        case AtFarmland:
+            place = "农田";
+            cmds = "  farm.status —— 查看农田\n"
+                "  farm.sow —— 播种\n"
+                "  farm.water —— 浇水\n"
+                "  farm.fertilize —— 施肥\n"
+                "  farm.harvest —— 收割\n"
+                "  move.<方向> —— 离开农田";
+            break;
+        case AtCoast:
+            place = "海岸";
+            cmds = "  fish.status —— 查看鱼池\n"
+                "  fish.tick —— 抛竿垂钓（每轮 3-6 秒，按 q 中止）\n"
+                "  move.<方向> —— 离开海岸";
+            break;
+        case AtMine:
+            place = "矿洞";
+            cmds = "  mine.status —— 查看采矿状态\n"
+                "  mine.start —— 开始采矿（每轮 3-6 秒，按 q 中止）\n"
+                "  mine.stop —— 手动结束采矿\n"
+                "  move.<方向> —— 离开矿洞";
+            break;
+        case AtTown:
+            place = "小镇（集市所在地）";
+            cmds = "  market.status —— 查看集市行情\n"
+                "  market.buy —— 购物\n"
+                "  market.sell —— 出售背包物品\n"
+                "  blacksmith.status —— 查看铁匠铺修复信息\n"
+                "  blacksmith.repair —— 修复工具\n"
+                "  move.<方向> —— 离开小镇";
+            break;
         }
         return "【" + std::string(place) + "】当前可用指令：\n" + cmds
-             + "\n通用指令：time.now 时间 | weather.now 天气 | tools.status 工具耐久"
-               " | save 存档 | load 读档 | help 帮助 | quit 退出";
+            + "\n通用指令：time.now 时间 | weather.now 天气 | tools.status 工具耐久"
+            " | save 存档 | load 读档 | help 帮助 | quit 退出";
     };
 
     // 每次输入前先刷新输入法提示（TUI 在输入框上方展示）。
     // 该提示仅在空闲（无输入、无补全、无问题）时显示。
-    const auto refresh_prompt = [&]() {
+    const auto refresh_prompt = [&]()
+    {
         tuiState.input_hint = input_hint();
     };
 
     // 通用输出：当前时刻 + 天气
-    const auto render_now = [&]() {
+    const auto render_now = [&]()
+    {
         terminal.render_now(make_time_view(), make_weather_view());
     };
 
     // 单行反馈文本：委托 MessagePanel 展示（进入 TUI 日志区）。
-    const auto msg = [&](const std::string& text) {
+    const auto msg = [&](const std::string& text)
+    {
         terminal.render_message(mud::view::MessageLine{text});
-    };    // 采矿上下文生成：由玩家采矿经验推导等级，由矿镐等级推导速度与间隔
-    const auto build_mine_ctx = [&]() -> mining::MiningContext {
+    }; // 采矿上下文生成：由玩家采矿经验推导等级，由矿镐等级推导速度与间隔
+    const auto build_mine_ctx = [&]() -> mining::MiningContext
+    {
         mining::MiningContext mc;
         mc.mining_level = 1 + static_cast<std::size_t>(player.GetMineExp() / 100);
-        mc.has_torch = true;      // 演示：默认持有照明
+        mc.has_torch = true; // 演示：默认持有照明
         mc.has_lantern = true;
         const int pick = tools.level(mud::tool::ToolId::Pickaxe);
-        switch (pick) {
-            case 5: mc.tool.mining_speed = mining::MiningSpeed::Iron;    break;
-            case 4: mc.tool.mining_speed = mining::MiningSpeed::Silver;  break;
-            case 3: mc.tool.mining_speed = mining::MiningSpeed::Gold;    break;
-            case 2: mc.tool.mining_speed = mining::MiningSpeed::Crystal; break;
-            default: mc.tool.mining_speed = mining::MiningSpeed::Core;   break;
+        switch (pick)
+        {
+        case 5: mc.tool.mining_speed = mining::MiningSpeed::Iron;
+            break;
+        case 4: mc.tool.mining_speed = mining::MiningSpeed::Silver;
+            break;
+        case 3: mc.tool.mining_speed = mining::MiningSpeed::Gold;
+            break;
+        case 2: mc.tool.mining_speed = mining::MiningSpeed::Crystal;
+            break;
+        default: mc.tool.mining_speed = mining::MiningSpeed::Core;
+            break;
         }
         mc.tool.interval = std::max<std::int64_t>(1, 7 - pick); // 矿镐等级越高，单次采矿间隔越短
         return mc;
@@ -410,15 +447,17 @@ int main()
 
     // 采矿产出入库：按矿石数据复制新 Object 进背包，并累计采矿经验；
     // 反馈文本统一收集后交由 MiningPanel 渲染。
-    const auto grant_mining = [&](const std::vector<mining::MiningResult>& results, bool render = true) {
+    const auto grant_mining = [&](const std::vector<mining::MiningResult>& results, bool render = true)
+    {
         std::vector<mud::view::MiningEventView> events;
-        for (const auto& r : results) {
+        for (const auto& r : results)
+        {
             const std::string name = oreTable.get_ore_name(r.ore_id);
             const std::string usage = oreTable.get_ore_usage(r.ore_id);
             const auto price = oreTable.get_ore_price(r.ore_id);
             for (std::size_t i = 0; i < r.quantity; ++i)
                 player.GetBag().AddObject(new Object(name, usage, 0,
-                     static_cast<int>(price), 0));
+                                                     static_cast<int>(price), 0));
             player.SetMineExp(player.GetMineExp() + static_cast<int>(r.experience));
             events.push_back({name, r.quantity, r.experience});
         }
@@ -430,7 +469,8 @@ int main()
     // 推进游戏时间，随后对实际跨过的每个游戏分钟驱动天气/作物/钓鱼，
     // 跨天刷新集市；若在采矿则按到期进度统一结算产出。
     // 注意：time_scale 可非整分钟（如 0.5），整分钟未凑满时跳过本次推进。
-    const auto tick_world = [&]() {
+    const auto tick_world = [&]()
+    {
         const auto before = timeService.now();
         timeService.update();
         const std::int64_t before_total = before.total_minutes();
@@ -439,18 +479,21 @@ int main()
 
         std::int64_t last_day = before_total / 1440;
         auto cursor = before;
-        for (std::int64_t t = before_total; t < now_total; ++t) {
+        for (std::int64_t t = before_total; t < now_total; ++t)
+        {
             cursor.advance(1);
             weather.update();
             farming.tick(cursor);
             fishing.tick(cursor);
             const std::int64_t day = cursor.total_minutes() / 1440;
-            if (day != last_day) {
+            if (day != last_day)
+            {
                 market.onNewDay(cursor);
                 last_day = day;
             }
         }
-        if (miningHandler.is_mining()) {
+        if (miningHandler.is_mining())
+        {
             const auto results = miningHandler.poll(build_mine_ctx());
             grant_mining(results, false); // 后台静默入包，不打断正在键入的命令
         }
@@ -460,22 +503,27 @@ int main()
     // 采矿
     // TUI 环境下改以 MiningHandler 会话 + 后台时间线程 (tick_world) 非阻塞推进：
     // "开始采矿" 仅建立会话并提示，产出由后台逐游戏分钟结算，输入 q 或 mine.stop 结束。
-    connector.bind("mine.start", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtMine) {
+    connector.bind("mine.start", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtMine)
+        {
             msg("你不在矿区。");
             return HandlerResult::Failed;
         }
-        if (miningHandler.is_mining()) {
+        if (miningHandler.is_mining())
+        {
             msg("当前已在采矿中。");
             return HandlerResult::Ok;
         }
         const std::size_t layer = static_cast<std::size_t>(opt_int(cmd, "layer", 0));
         const auto mc = build_mine_ctx();
-        if (!miningController.can_enter(layer, mc)) {
+        if (!miningController.can_enter(layer, mc))
+        {
             msg("层条件不满足（等级或照明不足）。");
             return HandlerResult::Failed;
         }
-        if (!miningHandler.start(layer, mc)) {
+        if (!miningHandler.start(layer, mc))
+        {
             msg("开始采矿失败。");
             return HandlerResult::Failed;
         }
@@ -485,8 +533,10 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("mine.stop", [&](const mud::cmd::Command&, const HandlerContext&) {
-        if (!miningHandler.is_mining()) {
+    connector.bind("mine.stop", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
+        if (!miningHandler.is_mining())
+        {
             msg("当前并未在采矿。");
             return HandlerResult::Failed;
         }
@@ -497,80 +547,108 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("mine.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("mine.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_mining_status(make_mining_view());
         return HandlerResult::Ok;
     });
 
     // 时间
-    connector.bind("time.now", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("time.now", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         render_now();
         return HandlerResult::Ok;
     });
 
-    connector.bind("time.scale", [&](const mud::cmd::Command& cmd, const HandlerContext& ctx2) {
-        const double factor = std::stod(cmd.options.at("factor"));
+    connector.bind("time.scale", [&](const mud::cmd::Command& cmd, const HandlerContext& ctx2)
+    {
+        double factor;
+        try
+        {
+            factor = std::stod(cmd.options.at("factor"));
+        }
+        catch (...)
+        {
+            // DEF-102：非法倍率（非数字/超范围）不得令 REPL 崩溃
+            msg("非法倍率：请输入数字（如 60、600）。");
+            return HandlerResult::BadArgument;
+        }
         ctx2.time.set_time_scale(factor);
-        terminal.render_time_scale(factor);
+        // 显示钳制后的实际倍率（DEF-103：钳制范围 [0,1e6]）
+        terminal.render_time_scale(ctx2.time.time_scale());
         return HandlerResult::Ok;
     });
 
     // 玩家状态 / 移动
-    connector.bind("player.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("player.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_status(make_player_status());
         return HandlerResult::Ok;
     });
 
-    const auto bind_move = [&](const std::string& verb, bool (Move::*fn)()) {
-        connector.bind(verb, [&, fn](const mud::cmd::Command&, const HandlerContext&) {
-            if (!weather.can_go_outside()) {
+    const auto bind_move = [&](const std::string& verb, bool (Move::*fn)())
+    {
+        connector.bind(verb, [&, fn](const mud::cmd::Command&, const HandlerContext&)
+        {
+            if (!weather.can_go_outside())
+            {
                 msg(weather.weather_name() + "天不宜外出。");
                 return HandlerResult::Failed;
             }
             player.SetState(StateCode::Moving);
-            if ((move.*fn)()) {
+            if ((move.*fn)())
+            {
                 msg("移动成功。");
                 terminal.render_map(player.GetPosition());
-            } else {
+            }
+            else
+            {
                 msg("这个方向走不通。");
             }
             player.SetState(StateCode::Waiting); // 一次性动作完成后复位，避免状态粘滞
             return HandlerResult::Ok;
         });
     };
-    bind_move("move.up",    &Move::GoUp);
-    bind_move("move.down",  &Move::GoDown);
-    bind_move("move.left",  &Move::GoLeft);
+    bind_move("move.up", &Move::GoUp);
+    bind_move("move.down", &Move::GoDown);
+    bind_move("move.left", &Move::GoLeft);
     bind_move("move.right", &Move::GoRight);
 
     // 农田
-    connector.bind("farm.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("farm.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_farm(make_farm_view());
         return HandlerResult::Ok;
     });
 
-    const auto valid_plot = [&](std::size_t idx) {
+    const auto valid_plot = [&](std::size_t idx)
+    {
         return idx < farming.farmSize();
     };
 
-    connector.bind("farm.sow", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtFarmland) {
+    connector.bind("farm.sow", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtFarmland)
+        {
             msg("你不在农田。");
             return HandlerResult::Failed;
         }
         const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "plot", 0));
         const std::string crop_key = cmd.options.count("crop") ? cmd.options.at("crop") : "";
         const auto it = kSeeds.find(crop_key);
-        if (it == kSeeds.end()) {
+        if (it == kSeeds.end())
+        {
             msg("没有这种作物：" + crop_key);
             return HandlerResult::BadArgument;
         }
         const Crop* crop = it->second;
-        if (crop->getUnlockLevel() > 1 + player.GetFarmingExp() / 100) {
+        if (crop->getUnlockLevel() > 1 + player.GetFarmingExp() / 100)
+        {
             msg("作物未解锁（需种植经验 ≥ " + std::to_string(crop->getUnlockLevel() * 100) + "）。");
             return HandlerResult::Failed;
         }
-        if (!valid_plot(idx) || !farming.sow(idx, it->second)) {
+        if (!valid_plot(idx) || !farming.sow(idx, it->second))
+        {
             msg("播种失败（地块占用或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -580,13 +658,16 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.water", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtFarmland) {
+    connector.bind("farm.water", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtFarmland)
+        {
             msg("你不在农田。");
             return HandlerResult::Failed;
         }
         const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "plot", 0));
-        if (!valid_plot(idx) || !farming.water(idx)) {
+        if (!valid_plot(idx) || !farming.water(idx))
+        {
             msg("浇水失败（地块无作物或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -597,8 +678,10 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.fertilize", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtFarmland) {
+    connector.bind("farm.fertilize", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtFarmland)
+        {
             msg("你不在农田。");
             return HandlerResult::Failed;
         }
@@ -607,11 +690,13 @@ int main()
         Fertilizer* fert = nullptr;
         if (type == "normal") fert = &normalFert;
         else if (type == "advanced") fert = &advancedFert;
-        if (fert == nullptr) {
+        if (fert == nullptr)
+        {
             msg("未知肥料类型：" + type + "（normal/advanced）");
             return HandlerResult::BadArgument;
         }
-        if (!valid_plot(idx) || !farming.fertilize(idx, fert)) {
+        if (!valid_plot(idx) || !farming.fertilize(idx, fert))
+        {
             msg("施肥失败（地块无作物或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -621,20 +706,24 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.harvest", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtFarmland) {
+    connector.bind("farm.harvest", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtFarmland)
+        {
             msg("你不在农田。");
             return HandlerResult::Failed;
         }
         const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "plot", 0));
-        if (!valid_plot(idx)) {
+        if (!valid_plot(idx))
+        {
             msg("地块索引越界。");
             return HandlerResult::BadArgument;
         }
         auto& fl = farm.getFarmland(idx);
         const Crop* crop = fl.getCrop();
         const int yield = farming.harvest(idx);
-        if (yield <= 0) {
+        if (yield <= 0)
+        {
             msg("尚无成熟作物。");
             return HandlerResult::Failed;
         }
@@ -650,14 +739,16 @@ int main()
     });
 
     // 钓鱼
-    connector.bind("fish.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("fish.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_fishing(make_fishing_view());
         return HandlerResult::Ok;
     });
 
     // 钓鱼（TUI 非阻塞版）：启动后由 handle_action_tick 按 3-6 秒节奏推进，
     // 输入 q 或再次 fish.tick（动作进行中）可结束。可反复 start/stop。
-    const auto end_fishing = [&](bool manual) {
+    const auto end_fishing = [&](bool manual)
+    {
         player.SetState(StateCode::Waiting);
         if (manual)
             msg("钓鱼结束（手动退出），共钓到 " + std::to_string(tuiState.action_cycles) + " 条鱼。");
@@ -668,20 +759,25 @@ int main()
         tuiState.action_next_ms = 0;
     };
 
-    connector.bind("fish.tick", [&](const mud::cmd::Command&, const HandlerContext&) {
-        if (tuiState.action_type == mud::tui::ActionType::Fish) {
+    connector.bind("fish.tick", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
+        if (tuiState.action_type == mud::tui::ActionType::Fish)
+        {
             end_fishing(true);
             return HandlerResult::Ok;
         }
-        if (player.GetPosition() != AtCoast) {
+        if (player.GetPosition() != AtCoast)
+        {
             msg("你不在海边。");
             return HandlerResult::Failed;
         }
-        if (!weather.can_fish()) {
+        if (!weather.can_fish())
+        {
             msg(weather.weather_name() + "天不能钓鱼。");
             return HandlerResult::Failed;
         }
-        if (player.GetSatiety() <= 0) {
+        if (player.GetSatiety() <= 0)
+        {
             msg("体力不足，无法钓鱼。");
             return HandlerResult::Failed;
         }
@@ -697,7 +793,8 @@ int main()
     });
 
     // 由 1 秒后台节拍调用的动作推进：钓鱼按记录的时间点逐轮结算。
-    const auto handle_action_tick = [&]() {
+    const auto handle_action_tick = [&]()
+    {
         if (tuiState.action_type != mud::tui::ActionType::Fish)
             return;
         const auto now = std::chrono::steady_clock::now();
@@ -705,19 +802,23 @@ int main()
             std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
         if (now_ms < tuiState.action_next_ms)
             return;
-        if (player.GetSatiety() <= 0) {
+        if (player.GetSatiety() <= 0)
+        {
             msg("体力耗尽，钓鱼停止。");
             end_fishing(false);
             return;
         }
         player.SetSatiety(player.GetSatiety() - kFishingSatietyCost);
         Fish* f = fishing.tickFish();
-        if (f == nullptr) {
+        if (f == nullptr)
+        {
             msg("  这一轮没有钓到鱼。");
-        } else {
+        }
+        else
+        {
             const std::string fname = kFishNames.at(f);
             player.GetBag().AddObject(new Object(fname, "刚钓上来的鱼", 0,
-                f->GetSellingPrice(), f->GetBuyingPrice()));
+                                                 f->GetSellingPrice(), f->GetBuyingPrice()));
             player.SetFishExp(player.GetFishExp() + f->getFishExp());
             msg("  钓到 " + fname + "！");
         }
@@ -727,19 +828,23 @@ int main()
     };
 
     // 天气
-    connector.bind("weather.now", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("weather.now", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_weather(make_weather_view());
         return HandlerResult::Ok;
     });
 
     // 集市
-    connector.bind("market.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("market.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_market(make_market_view());
         return HandlerResult::Ok;
     });
 
-    connector.bind("market.buy", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtTown) {
+    connector.bind("market.buy", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtTown)
+        {
             msg("你不在城镇。");
             return HandlerResult::Failed;
         }
@@ -747,50 +852,68 @@ int main()
         const std::string item_name = cmd.options.count("item") ? cmd.options.at("item") : "";
         const auto count = static_cast<std::size_t>(opt_int(cmd, "count", 1));
         Shop* shop = market.findShop(shop_id);
-        if (shop == nullptr) {
+        if (shop == nullptr)
+        {
             msg("没有这家商店：" + shop_id);
             return HandlerResult::BadArgument;
         }
         Object* item = nullptr;
-        const auto all_digits = [](const std::string& s) {
+        const auto all_digits = [](const std::string& s)
+        {
             if (s.empty()) return false;
             for (char c : s) if (c < '0' || c > '9') return false;
             return true;
         };
-        if (all_digits(item_name)) {
+        if (all_digits(item_name))
+        {
             const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "item", 0));
             if (idx < shop->itemCount()) item = shop->getItem(idx).getItem();
-        } else {
-            for (std::size_t i = 0; i < shop->itemCount(); ++i) {
+        }
+        else
+        {
+            for (std::size_t i = 0; i < shop->itemCount(); ++i)
+            {
                 Object* cand = shop->getItem(i).getItem();
-                if (cand != nullptr && cand->GetName() == item_name) { item = cand; break; }
+                if (cand != nullptr && cand->GetName() == item_name)
+                {
+                    item = cand;
+                    break;
+                }
             }
         }
-        if (item == nullptr) {
+        if (item == nullptr)
+        {
             msg("商店没有这种商品：" + item_name);
             return HandlerResult::BadArgument;
         }
         const int price = market.getBuyPrice(shop_id, item);
-        if (!market.buy(shop_id, item, static_cast<int>(count), gold)) {
+        if (!market.buy(shop_id, item, static_cast<int>(count), gold))
+        {
             msg("购买失败（金币不足或商品缺货）。");
             return HandlerResult::Failed;
         }
         for (std::size_t i = 0; i < count; ++i)
             player.GetBag().AddObject(new Object(item->GetName(), item->GetDescription(),
-                item->GetHealth(), item->GetSellingPrice(), item->GetBuyingPrice()));
+                                                 item->GetHealth(), item->GetSellingPrice(), item->GetBuyingPrice()));
+        // DEF-109：64 位计算总额，避免大金币/大数量下提示金额回绕
+        const long long spent =
+            static_cast<long long>(price) * static_cast<long long>(count);
         msg("购入 " + item->GetName() + " x" + std::to_string(count)
-            + "（花费 " + std::to_string(price * count) + "）。");
+            + "（花费 " + std::to_string(spent) + "）。");
         return HandlerResult::Ok;
     });
 
-    connector.bind("market.sell", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtTown) {
+    connector.bind("market.sell", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtTown)
+        {
             msg("你不在城镇。");
             return HandlerResult::Failed;
         }
         const std::string raw_item = cmd.options.count("item") ? cmd.options.at("item") : "";
         const auto count = static_cast<std::size_t>(opt_int(cmd, "count", 1));
-        const auto all_digits = [](const std::string& s) {
+        const auto all_digits = [](const std::string& s)
+        {
             if (s.empty()) return false;
             for (char c : s) if (c < '0' || c > '9') return false;
             return true;
@@ -798,18 +921,28 @@ int main()
         // 去重后的同名词（每个堆叠一项）
         const auto& all_names = player.GetBag().GetAllObjectName();
         std::string item_name;
-        if (all_digits(raw_item)) {
+        if (all_digits(raw_item))
+        {
             const std::size_t idx = static_cast<std::size_t>(opt_int(cmd, "item", 0));
-            if (idx >= all_names.size()) {
+            if (idx >= all_names.size())
+            {
                 msg("背包里没有序号 " + std::to_string(idx) + " 的物品。");
                 return HandlerResult::BadArgument;
             }
             item_name = all_names[idx];
-        } else {
+        }
+        else
+        {
             item_name = raw_item;
             bool found = false;
-            for (const auto& n : all_names) if (n == item_name) { found = true; break; }
-            if (!found) {
+            for (const auto& n : all_names)
+                if (n == item_name)
+                {
+                    found = true;
+                    break;
+                }
+            if (!found)
+            {
                 msg("背包里没有：" + item_name);
                 return HandlerResult::BadArgument;
             }
@@ -818,19 +951,32 @@ int main()
         const int have = player.GetBag().CountObject(item_name);
         const auto sell_count = static_cast<std::size_t>(std::min<long long>(
             static_cast<long long>(count), static_cast<long long>(have)));
-        if (sell_count == 0) {
+        if (sell_count == 0)
+        {
             msg("背包里没有：" + item_name);
             return HandlerResult::BadArgument;
         }
         Object* item = nullptr;
-        for (auto* obj : player.GetBag().GetObjects()) {
-            if (obj->GetName() == item_name) { item = obj; break; }
+        for (auto* obj : player.GetBag().GetObjects())
+        {
+            if (obj->GetName() == item_name)
+            {
+                item = obj;
+                break;
+            }
         }
-        if (item == nullptr) {
+        if (item == nullptr)
+        {
             msg("背包里没有：" + item_name);
             return HandlerResult::BadArgument;
         }
-        const int gained = market.sell(item, static_cast<int>(sell_count), gold);
+        const long long gained = market.sell(item, static_cast<int>(sell_count), gold);
+        if (gained <= 0)
+        {
+            // DEF-106：售价经浮动截断为 0 时不得移除物品（否则白送）
+            msg("出售失败：" + item_name + " 当前售价为 0。");
+            return HandlerResult::Failed;
+        }
         player.GetBag().RemoveObject(item_name, static_cast<int>(sell_count));
         msg("出售" + item_name + " x" + std::to_string(sell_count) + "，获得金币 "
             + std::to_string(gained) + "。");
@@ -838,14 +984,17 @@ int main()
     });
 
     // 工具
-    connector.bind("tools.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("tools.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         terminal.render_tools(make_tools_view());
         return HandlerResult::Ok;
     });
 
     // 铁匠铺（集市内，工具修复服务）
-    connector.bind("blacksmith.status", [&](const mud::cmd::Command&, const HandlerContext&) {
-        if (player.GetPosition() != AtTown) {
+    connector.bind("blacksmith.status", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtTown)
+        {
             msg("你不在城镇，先去小镇集市看看。");
             return HandlerResult::Failed;
         }
@@ -853,26 +1002,31 @@ int main()
         return HandlerResult::Ok;
     });
 
-    connector.bind("blacksmith.repair", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
-        if (player.GetPosition() != AtTown) {
+    connector.bind("blacksmith.repair", [&](const mud::cmd::Command& cmd, const HandlerContext&)
+    {
+        if (player.GetPosition() != AtTown)
+        {
             msg("你不在城镇，无法前往铁匠铺。");
             return HandlerResult::Failed;
         }
         const std::string tool_key = cmd.options.count("tool") ? cmd.options.at("tool") : "";
         const std::string method = cmd.options.count("method") ? cmd.options.at("method") : "";
         mud::tool::ToolId id;
-        if (tool_key == "hoe")             id = mud::tool::ToolId::Hoe;
-        else if (tool_key == "rod")        id = mud::tool::ToolId::Rod;
-        else if (tool_key == "pickaxe")    id = mud::tool::ToolId::Pickaxe;
-        else {
+        if (tool_key == "hoe") id = mud::tool::ToolId::Hoe;
+        else if (tool_key == "rod") id = mud::tool::ToolId::Rod;
+        else if (tool_key == "pickaxe") id = mud::tool::ToolId::Pickaxe;
+        else
+        {
             msg("未知工具：" + tool_key + "（可用 hoe/rod/pickaxe）");
             return HandlerResult::BadArgument;
         }
-        if (method != "gold" && method != "ore") {
+        if (method != "gold" && method != "ore")
+        {
             msg("未知修复方式：" + method + "（可用 ore/gold）");
             return HandlerResult::BadArgument;
         }
-        if (tools.is_full(id)) {
+        if (tools.is_full(id))
+        {
             msg(tools.name(id) + " 完好无损，无需修复。");
             return HandlerResult::Ok;
         }
@@ -880,15 +1034,18 @@ int main()
         const std::string ore = tools.repair_ore(id);
         const int ore_needed = tools.repair_ore_count(id);
 
-        if (method == "ore") {
+        if (method == "ore")
+        {
             const int ore_cost = tools.ore_repair_cost(id);
             const int ore_held = player.GetBag().CountObject(ore);
-            if (ore_held < ore_needed) {
+            if (ore_held < ore_needed)
+            {
                 msg("矿石不足：" + ore + " 需要 x" + std::to_string(ore_needed)
                     + "，当前持有 " + std::to_string(ore_held) + "。");
                 return HandlerResult::Failed;
             }
-            if (gold < ore_cost) {
+            if (gold < ore_cost)
+            {
                 msg("金币不足，矿石修复还需 " + std::to_string(ore_cost) + " 金币（当前 "
                     + std::to_string(gold) + "）。");
                 return HandlerResult::Failed;
@@ -903,7 +1060,8 @@ int main()
             return HandlerResult::Ok;
         }
         // 金币修复
-        if (gold < gold_cost) {
+        if (gold < gold_cost)
+        {
             msg("金币不足：修复" + tools.name(id) + " 需要 " + std::to_string(gold_cost)
                 + " 金币（当前 " + std::to_string(gold) + "）。");
             return HandlerResult::Failed;
@@ -917,25 +1075,32 @@ int main()
     });
 
     // 存档 / 读档
-    connector.bind("save", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("save", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         PlayerSerializer serializer;
         if (serializer.Save(kSaveFileName, player, game, gold, tools,
-                            timeService.session_total())) {
+                            timeService.session_total()))
+        {
             msg(std::string("存档成功：") + kSaveFileName);
-        } else {
+        }
+        else
+        {
             msg("存档失败（无法写入存档文件）。");
         }
         return HandlerResult::Ok;
     });
 
-    connector.bind("load", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("load", [&](const mud::cmd::Command&, const HandlerContext&)
+    {
         PlayerSerializer serializer;
         std::int64_t totalMinutes = -1;
-        if (!serializer.Load(kSaveFileName, player, game, gold, tools, totalMinutes)) {
+        if (!serializer.Load(kSaveFileName, player, game, gold, tools, totalMinutes))
+        {
             msg(std::string("读档失败：没有找到存档 ") + kSaveFileName + "。");
             return HandlerResult::Failed;
         }
-        if (totalMinutes >= 0) {
+        if (totalMinutes >= 0)
+        {
             mud::time::GameDateTime t;
             t.advance(totalMinutes); // 由存档总分钟数重建游戏内时钟
             timeService.set_time(t);
@@ -951,55 +1116,65 @@ int main()
     const std::size_t farmSize = farming.farmSize();
 
     connector.register_schema("mine.start", {
-        "开始采矿",
-        {{"layer", "目标层(0-4)", true, ""}}
-    });
+                                  "开始采矿",
+                                  {{"layer", "目标层(0-4)", true, ""}}
+                              });
 
     connector.register_schema("time.scale", {
-        "设置时间倍率",
-        {{"factor", "时间倍率(如 0.5/1/2/60)", true, ""}}
-    });
+                                  "设置时间倍率",
+                                  {{"factor", "时间倍率(如 0.5/1/2/60)", true, ""}}
+                              });
 
     connector.register_schema("farm.sow", {
-        "播种",
-        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
-         {"crop", "作物名(cabbage/carrot/tomato/pumpkin/lingzhi)", true, ""}}
-    });
+                                  "播种",
+                                  {
+                                      {"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
+                                      {"crop", "作物名(cabbage/carrot/tomato/pumpkin/lingzhi)", true, ""}
+                                  }
+                              });
 
     connector.register_schema("farm.water", {
-        "浇水",
-        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
-    });
+                                  "浇水",
+                                  {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
+                              });
 
     connector.register_schema("farm.fertilize", {
-        "施肥",
-        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
-         {"type", "肥料类型(normal/advanced)", true, ""}}
-    });
+                                  "施肥",
+                                  {
+                                      {"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""},
+                                      {"type", "肥料类型(normal/advanced)", true, ""}
+                                  }
+                              });
 
     connector.register_schema("farm.harvest", {
-        "收割",
-        {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
-    });
+                                  "收割",
+                                  {{"plot", "地块索引(0-" + std::to_string(farmSize - 1) + ")", true, ""}}
+                              });
 
     connector.register_schema("market.buy", {
-        "从商店购买",
-        {{"shop", "商店ID(seed/grocery)", true, ""},
-         {"item", "物品名", true, ""},
-         {"count", "购买数量", false, "1"}}
-    });
+                                  "从商店购买",
+                                  {
+                                      {"shop", "商店ID(seed/grocery)", true, ""},
+                                      {"item", "物品名", true, ""},
+                                      {"count", "购买数量", false, "1"}
+                                  }
+                              });
 
     connector.register_schema("market.sell", {
-        "向集市出售背包物品",
-        {{"item", "物品名或序号", true, ""},
-         {"count", "出售数量", false, "1"}}
-    });
+                                  "向集市出售背包物品",
+                                  {
+                                      {"item", "物品名或序号", true, ""},
+                                      {"count", "出售数量", false, "1"}
+                                  }
+                              });
 
     connector.register_schema("blacksmith.repair", {
-        "在铁匠铺修复工具",
-        {{"tool", "工具名(hoe/rod/pickaxe)", true, ""},
-         {"method", "修复方式(ore/gold)", true, ""}}
-    });
+                                  "在铁匠铺修复工具",
+                                  {
+                                      {"tool", "工具名(hoe/rod/pickaxe)", true, ""},
+                                      {"method", "修复方式(ore/gold)", true, ""}
+                                  }
+                              });
 
     // ================= 自动时间推进（真实时间后台） =================
     // worldMutex 串行化「后台推进」与「FTXUI 命令执行」：命令处理与逐分钟更新
@@ -1033,7 +1208,8 @@ int main()
 
     // 根据参数名生成候选补全列表（用户可直接输入或按 Tab 采用首个）。
     const auto param_choices =
-        [&](const mud::cmd::ParameterDef& p) -> std::vector<std::string> {
+        [&](const mud::cmd::ParameterDef& p) -> std::vector<std::string>
+    {
         if (p.name == "layer")
             return {"0", "1", "2", "3", "4"};
         if (p.name == "crop")
@@ -1046,7 +1222,8 @@ int main()
             return {"hoe", "rod", "pickaxe"};
         if (p.name == "method")
             return {"ore", "gold"};
-        if (p.name == "plot") {
+        if (p.name == "plot")
+        {
             std::vector<std::string> out;
             for (std::size_t i = 0; i < farming.farmSize(); ++i)
                 out.push_back(std::to_string(i));
@@ -1056,8 +1233,10 @@ int main()
     };
 
     // 推进到下一个待填参数；全部填毕则 dispatch。（调用方需已持有 worldMutex）
-    const auto ask_next_param = [&]() {
-        if (pendingIndex >= pendingParams.size()) {
+    const auto ask_next_param = [&]()
+    {
+        if (pendingIndex >= pendingParams.size())
+        {
             collecting = false;
             tuiState.question.clear();
             tuiState.completions.clear();
@@ -1076,7 +1255,8 @@ int main()
     };
 
     // 开始为某个动词收集参数（调用方需已持有 worldMutex）。
-    const auto start_collect = [&](const std::string& verb) {
+    const auto start_collect = [&](const std::string& verb)
+    {
         collecting = true;
         pendingCmd = mud::cmd::Command{};
         pendingCmd.verb = verb;
@@ -1087,7 +1267,8 @@ int main()
     };
 
     // 用户停止需要 min 参数的命令时取消收集
-    const auto cancel_collect = [&]() {
+    const auto cancel_collect = [&]()
+    {
         collecting = false;
         pendingCmd = mud::cmd::Command{};
         pendingParams.clear();
@@ -1098,7 +1279,8 @@ int main()
 
     // ================= TUI 命令处理回调 =================
     // 返回 true 表示命令已处理（继续运行）；false 表示请求退出循环。
-    const auto process_line = [&](const std::string& raw_line) -> bool {
+    const auto process_line = [&](const std::string& raw_line) -> bool
+    {
         std::string line = raw_line;
         while (!line.empty() && (line.front() == ' ' || line.front() == '\t'))
             line.erase(line.begin());
@@ -1108,18 +1290,22 @@ int main()
             return true;
 
         // q：参数收集中则取消输入；否则结束当前进行的动作
-        if (line == "q" || line == "Q") {
-            if (collecting) {
+        if (line == "q" || line == "Q")
+        {
+            if (collecting)
+            {
                 cancel_collect();
                 msg("已取消输入。");
                 return true;
             }
             std::lock_guard<std::mutex> lock(worldMutex);
-            if (tuiState.action_type == mud::tui::ActionType::Fish) {
+            if (tuiState.action_type == mud::tui::ActionType::Fish)
+            {
                 end_fishing(true);
                 return true;
             }
-            if (miningHandler.is_mining()) {
+            if (miningHandler.is_mining())
+            {
                 mud::cmd::Command cmd;
                 cmd.verb = "mine.stop";
                 cmd.raw = line;
@@ -1134,22 +1320,31 @@ int main()
             std::lock_guard<std::mutex> lock(worldMutex);
 
             // 参数收集进行中：将本行作为当前参数的值。
-            if (collecting) {
-                if (line == "quit") {
+            if (collecting)
+            {
+                if (line == "quit")
+                {
                     cancel_collect();
                     msg("已取消输入。");
                     return true;
                 }
                 const auto& p = pendingParams[pendingIndex];
-                if (!line.empty()) {
+                if (!line.empty())
+                {
                     pendingCmd.options[p.name] = line;
                     ++pendingIndex;
-                } else if (!p.default_value.empty()) {
+                }
+                else if (!p.default_value.empty())
+                {
                     pendingCmd.options[p.name] = p.default_value;
                     ++pendingIndex;
-                } else if (!p.required) {
+                }
+                else if (!p.required)
+                {
                     ++pendingIndex;
-                } else {
+                }
+                else
+                {
                     ask_next_param(); // 必填且无默认：重新提示
                     return true;
                 }
@@ -1159,11 +1354,13 @@ int main()
 
             const std::string verb = parser.parse_verb_only(line);
 
-            if (verb == "quit") {
+            if (verb == "quit")
+            {
                 tuiState.push_log("再见！");
                 return false; // 通知 GameTui 退出
             }
-            if (verb == "help") {
+            if (verb == "help")
+            {
                 terminal.render_message(mud::view::MessageLine{
                     "可用指令（输入行动名称后按提示填写参数）：\n"
                     "  time.now —— 查看当前时间\n"
@@ -1187,16 +1384,19 @@ int main()
                     "  tools.status —— 查看工具耐久\n"
                     "  blacksmith.status —— 查看铁匠铺\n"
                     "  blacksmith.repair —— 修复工具（需工具名/方式）\n"
-                    "  save —— 存档  |  load —— 读档  |  quit —— 退出"});
+                    "  save —— 存档  |  load —— 读档  |  quit —— 退出"
+                });
                 return true;
             }
-            if (verb.empty()) {
+            if (verb.empty())
+            {
                 msg("无法识别的输入：" + line);
                 return true;
             }
 
             // 交互收集：注册了 schema 的动词先逐参数提示，不再直接执行。
-            if (connector.has_schema(verb)) {
+            if (connector.has_schema(verb))
+            {
                 start_collect(verb);
                 return true;
             }
@@ -1214,7 +1414,8 @@ int main()
     // ================= TUI 动态补全回调 =================
     // 空闲：按输入前缀过滤已知动词；参数收集中：过滤当前参数的候选。
     const auto completions_fn =
-        [&](const std::string& input) -> std::vector<std::string> {
+        [&](const std::string& input) -> std::vector<std::string>
+    {
         if (input.empty())
             return {};
         if (collecting)
@@ -1227,7 +1428,8 @@ int main()
     };
 
     // 每秒后台节拍：推进世界 + 推进非阻塞动作 + 刷新 idle 提示。
-    const auto world_step = [&]() {
+    const auto world_step = [&]()
+    {
         std::lock_guard<std::mutex> lock(worldMutex);
         tick_world();
         handle_action_tick();
@@ -1241,8 +1443,10 @@ int main()
     tui.set_tick([&]() { refresh_prompt(); });
 
     // 后台线程每现实秒推进时间，经 post_background 在主线程执行 world_step。
-    std::jthread timeThread([&](std::stop_token st) {
-        while (!st.stop_requested()) {
+    std::jthread timeThread([&](std::stop_token st)
+    {
+        while (!st.stop_requested())
+        {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if (st.stop_requested()) break;
             tui.post_background([&]() { world_step(); });
@@ -1252,7 +1456,8 @@ int main()
     // 启动信息写入日志区。
     terminal.render_message(mud::view::MessageLine{
         "欢迎来到 胡萝卜山谷 MUD！输入行动名称即可，系统会逐个提示所需参数。\n"
-        "输入 help 查看全部指令，quit 退出。"});
+        "输入 help 查看全部指令，quit 退出。"
+    });
     render_now();
     terminal.render_map(player.GetPosition());
     refresh_prompt();
@@ -1261,9 +1466,11 @@ int main()
     // 路径经 MUDGAME_RES_DIR 编译期注入，避免依赖运行目录。
     const std::string kBgmFile = std::string(MUDGAME_RES_DIR) + "/Famitracker_8bit.mp3";
     mud::audio::MusicPlayer bgm;
-    if (!bgm.start(kBgmFile)) {
+    if (!bgm.start(kBgmFile))
+    {
         terminal.render_message(mud::view::MessageLine{
-            "提示：背景音乐加载失败，本次游戏静音（" + kBgmFile + "）。"});
+            "提示：背景音乐加载失败，本次游戏静音（" + kBgmFile + "）。"
+        });
     }
 
     // 阻塞运行 FTXUI 事件循环，直到 quit / Ctrl+C 触发退出。

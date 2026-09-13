@@ -42,7 +42,7 @@ namespace mud
         /** @brief 直接设置当前游戏时间。 */
         void set_time(time::GameDateTime t);
 
-        /** @brief 设置时间流速倍率（游戏秒/现实秒）。 */
+        /** @brief 设置时间流速倍率（游戏秒/现实秒）；钳制到 [0,1e6]，负值/NaN 视为 0。 */
         void set_time_scale(double scale);
 
         /** @brief 返回当前时间流速倍率。 */

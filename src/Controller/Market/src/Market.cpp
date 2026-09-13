@@ -92,14 +92,17 @@ int Market::updateFluctuations() {
     int count = 2 + std::uniform_int_distribution<int>(0, 1)(rng());      // 2 或 3
     count = std::min(count, static_cast<int>(candidates.size()));
 
+    // DEF-107：不放回抽取（部分洗牌）——前 count 位即被选中的不同商品，
+    // 修复前有放回抽取可重复命中同一商品，map 覆盖令品种数缩水、返回值虚报
     for (int i = 0; i < count; ++i) {
-        int index = std::uniform_int_distribution<int>(
-            0, static_cast<int>(candidates.size()) - 1)(rng());
-        Object* item = candidates[index];
+        const int j = std::uniform_int_distribution<int>(
+            i, static_cast<int>(candidates.size()) - 1)(rng());
+        std::swap(candidates[static_cast<std::size_t>(i)],
+                  candidates[static_cast<std::size_t>(j)]);
         // 偏移 [-0.30, 0.30]
         float offset = (std::uniform_real_distribution<float>(0.0f, 1.0f)(rng()) - 0.5f) * 0.6f;
         float factor = 1.0f + offset;
-        fluctuations[item] = factor;
+        fluctuations[candidates[static_cast<std::size_t>(i)]] = factor;
     }
 
     return count;

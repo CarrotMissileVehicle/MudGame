@@ -9,3 +9,6 @@ endfunction()
 
 mudgame_add_serializer_test(player_serializer_roundtrip_test
     player_serializer_roundtrip_test.cpp)
+
+mudgame_add_serializer_test(player_serializer_robustness_test
+    load_robustness_test.cpp)

@@ -24,3 +24,16 @@ mudgame_add_farm_test(farm_fertilize_test
 
 mudgame_add_farm_test(farm_grow_test
     water_grow/farm_grow_test.cpp)
+
+mudgame_add_farm_test(farming_bounds_test
+    bounds/farming_bounds_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/Controller/Farm/src/Farm.cpp
+    ${CMAKE_SOURCE_DIR}/src/Controller/Farming/src/FarmingController.cpp)
+target_sources(farming_bounds_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/Controller/Fertilizer/src/Fertilizer.cpp
+    ${CMAKE_SOURCE_DIR}/src/Controller/Fertilizer/src/NormalFertilizer.cpp
+    ${CMAKE_SOURCE_DIR}/src/Controller/Fertilizer/src/AdvancedFertilizer.cpp)
+target_include_directories(farming_bounds_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/Controller/Fertilizer/include
+    ${CMAKE_SOURCE_DIR}/src/Controller/Farming/include
+    ${CMAKE_SOURCE_DIR}/src/Model/Timeservice/include)

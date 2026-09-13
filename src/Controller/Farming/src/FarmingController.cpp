@@ -1,17 +1,27 @@
 #include "../include/FarmingController.h"
 
+// DEF-108：索引来自用户命令输入，越界必须以返回值拒绝，
+// 不得令 Farm::getFarmland().at() 抛 out_of_range 逃逸导致崩溃
+namespace
+{
+bool in_bounds(const Farm* farm, std::size_t index)
+{
+    return farm != nullptr && index < farm->size();
+}
+} // namespace
+
 FarmingController::FarmingController(Farm* farm)
         : farm(farm) {}
 
 FarmingController::~FarmingController() {}
 
 bool FarmingController::sow(std::size_t index, Crop* seed) {
-    if (farm == nullptr) return false;
+    if (!in_bounds(farm, index)) return false;
     return farm->getFarmland(index).sow(seed);
 }
 
 bool FarmingController::water(std::size_t index) {
-    if (farm == nullptr) return false;
+    if (!in_bounds(farm, index)) return false;
     return farm->getFarmland(index).water();
 }
 
@@ -25,7 +35,7 @@ bool FarmingController::waterAll() {
 }
 
 bool FarmingController::fertilize(std::size_t index, Fertilizer* fertilizer) {
-    if (farm == nullptr || fertilizer == nullptr) return false;
+    if (!in_bounds(farm, index) || fertilizer == nullptr) return false;
     auto& land = farm->getFarmland(index);
     if (!land.isOccupied()) return false; // 空地不可施肥
     land.fertilize(fertilizer->getSpeedUp());
@@ -33,7 +43,7 @@ bool FarmingController::fertilize(std::size_t index, Fertilizer* fertilizer) {
 }
 
 int FarmingController::harvest(std::size_t index) {
-    if (farm == nullptr) return 0;
+    if (!in_bounds(farm, index)) return 0;
     return farm->getFarmland(index).harvest();
 }
 

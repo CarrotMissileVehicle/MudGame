@@ -7,6 +7,23 @@
 #include <fstream>
 #include <sstream>
 
+namespace
+{
+
+// DEF-104：存档为不可信输入——数值字段损坏时回退默认值，
+// 而非令 stoi/stoll 异常逃逸导致读档崩溃
+int to_int_or(const std::string& text, int fallback) noexcept
+{
+    try { return std::stoi(text); } catch (...) { return fallback; }
+}
+
+long long to_ll_or(const std::string& text, long long fallback) noexcept
+{
+    try { return std::stoll(text); } catch (...) { return fallback; }
+}
+
+} // namespace
+
 bool PlayerSerializer::Save(const std::string& filename, const Player& player, const Game& game,
                             long long gold, const mud::tool::ToolController& tools,
                             std::int64_t totalGameMinutes) {
@@ -102,50 +119,52 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
             } else if (key == "state") {
                 state = ParseState(value);
             } else if (key == "satiety") {
-                satiety = std::stoi(value);
+                satiety = to_int_or(value, satiety);
             } else if (key == "maxSatiety") {
-                maxSatiety = std::stoi(value);
+                maxSatiety = to_int_or(value, maxSatiety);
             } else if (key == "farmingExp") {
-                farmingExp = std::stoi(value);
+                farmingExp = to_int_or(value, farmingExp);
             } else if (key == "fishExp") {
-                fishExp = std::stoi(value);
+                fishExp = to_int_or(value, fishExp);
             } else if (key == "mineExp") {
-                mineExp = std::stoi(value);
+                mineExp = to_int_or(value, mineExp);
             } else if (key == "gold") {
-                goldInFile = std::stoll(value);
-                hasGold = true;
+                // DEF-104：金币行损坏视为无该段，保持调用方初值
+                try { goldInFile = std::stoll(value); hasGold = true; }
+                catch (...) { /* 忽略非法金币 */ }
             } else if (key == "saveOpenYear") {
-                saveOpenYear = std::stoll(value);
+                saveOpenYear = to_ll_or(value, saveOpenYear);
             } else if (key == "saveOpenMonth") {
-                saveOpenMonth = std::stoll(value);
+                saveOpenMonth = to_ll_or(value, saveOpenMonth);
             } else if (key == "saveOpenDay") {
-                saveOpenDay = std::stoll(value);
+                saveOpenDay = to_ll_or(value, saveOpenDay);
             } else if (key == "saveOpenHour") {
-                saveOpenHour = std::stoll(value);
+                saveOpenHour = to_ll_or(value, saveOpenHour);
             } else if (key == "saveOpenMinute") {
-                saveOpenMinute = std::stoll(value);
+                saveOpenMinute = to_ll_or(value, saveOpenMinute);
             } else if (key == "totalPlaySeconds") {
-                totalPlaySeconds = std::stoll(value);
+                totalPlaySeconds = to_ll_or(value, totalPlaySeconds);
             } else if (key == "gameTotalMinutes") {
-                totalGameMinutes = std::stoll(value);
-                hasTotalMinutes = true;
+                // DEF-104：损坏视为无该段，保持调用方初值
+                try { totalGameMinutes = std::stoll(value); hasTotalMinutes = true; }
+                catch (...) { /* 忽略非法总分钟 */ }
             } else if (key == "toolHoeLevel") {
-                hoeLevel = std::stoi(value);
+                hoeLevel = to_int_or(value, hoeLevel);
                 hasTools = true;
             } else if (key == "toolHoeDurability") {
-                hoeDurability = std::stoi(value);
+                hoeDurability = to_int_or(value, hoeDurability);
                 hasTools = true;
             } else if (key == "toolRodLevel") {
-                rodLevel = std::stoi(value);
+                rodLevel = to_int_or(value, rodLevel);
                 hasTools = true;
             } else if (key == "toolRodDurability") {
-                rodDurability = std::stoi(value);
+                rodDurability = to_int_or(value, rodDurability);
                 hasTools = true;
             } else if (key == "toolPickLevel") {
-                pickLevel = std::stoi(value);
+                pickLevel = to_int_or(value, pickLevel);
                 hasTools = true;
             } else if (key == "toolPickDurability") {
-                pickDurability = std::stoi(value);
+                pickDurability = to_int_or(value, pickDurability);
                 hasTools = true;
             } else if (key == "bagCount") {
                 // 容器连线数（按行还原，不必记录该值）
@@ -159,13 +178,18 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
 
     using namespace std::chrono;
     // 由日历字段重建保存开启时间（游戏纪元 0年1月1日 起推算，1970 前视为纪元起点）
-    auto ymd = year{static_cast<int>(saveOpenYear)} / month{static_cast<unsigned>(saveOpenMonth)}
-             / day{static_cast<unsigned>(std::max<long long>(saveOpenDay, 1))};
-    auto saveOpenTp = sys_days{ymd} + hours{static_cast<long long>(std::min<long long>(saveOpenHour, 23))}
-                    + minutes{static_cast<long long>(std::min<long long>(saveOpenMinute, 59))};
-
-    if (saveOpenTp.time_since_epoch() >= seconds(0)) {
-        game.setSaveOpenTime(system_clock::time_point(saveOpenTp));
+    // DEF-105：非法日历（月=0/13、日=32、2月30 等）令 sys_days{ymd} 为 UB，
+    // 以 ymd.ok() 拦截——非法时保持 game 既有存档时间（与 1970 前分支同语义）
+    const auto ymd = year{static_cast<int>(std::clamp<long long>(saveOpenYear, 0, 9999))}
+                   / month{static_cast<unsigned>(saveOpenMonth)}
+                   / day{static_cast<unsigned>(std::max<long long>(saveOpenDay, 1))};
+    if (ymd.ok()) {
+        const auto saveOpenTp = sys_days{ymd}
+            + hours{std::clamp<long long>(saveOpenHour, 0, 23)}
+            + minutes{std::clamp<long long>(saveOpenMinute, 0, 59)};
+        if (saveOpenTp.time_since_epoch() >= seconds(0)) {
+            game.setSaveOpenTime(system_clock::time_point(saveOpenTp));
+        }
     }
     game.setTotalPlayTime(seconds(totalPlaySeconds));
 
@@ -186,14 +210,14 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
             std::getline(itemIss, healthStr, '|') &&
             std::getline(itemIss, sellStr, '|') &&
             std::getline(itemIss, buyStr, '|')) {
-            int health = std::stoi(healthStr);
-            int sellPrice = std::stoi(sellStr);
-            int buyPrice = std::stoi(buyStr);
+            int health = to_int_or(healthStr, 0);
+            int sellPrice = to_int_or(sellStr, 0);
+            int buyPrice = to_int_or(buyStr, 0);
             Object* obj = new Object(name, description, health, sellPrice, buyPrice);
-            // 第 6 段为可选数量段（兼容旧存档）；缺省数量为 1
+            // 第 6 段为可选数量段（兼容旧存档）；缺省/非法数量回退 1
             std::string qtyStr;
             if (std::getline(itemIss, qtyStr) && !qtyStr.empty()) {
-                try { obj->SetQuantity(std::stoi(qtyStr)); } catch (...) { /* 忽略非法数量 */ }
+                obj->SetQuantity(to_int_or(qtyStr, 1));
             }
             // 存档已按堆叠聚合：直接入包，避免再次合并
             player.GetBag().AddUnique(obj);

@@ -90,8 +90,15 @@ void mud::TimeService::set_time(time::GameDateTime t)
     sub_minute_ = 0.0;
 }
 
-// 设置时间流速倍率
-void mud::TimeService::set_time_scale(double scale) { time_scale_ = scale; }
+// 设置时间流速倍率（DEF-103：钳制到 [0, 1e6]——上限防止 update() 内
+// double→int 转换溢出 UB；负值/NaN 一律视为静止 0）
+void mud::TimeService::set_time_scale(double scale)
+{
+    if (!(scale > 0.0)) // 负值、0、NaN 均不满足
+        time_scale_ = 0.0;
+    else
+        time_scale_ = scale > 1e6 ? 1e6 : scale;
+}
 
 // 返回时间流速倍率
 double mud::TimeService::time_scale() const { return time_scale_; }
