@@ -2,13 +2,15 @@
 # Market 体系为 Jerry 模块（源码编进 MudGame 目标），测试直接编译所需源文件。
 function(mudgame_add_market_test target)
     add_executable(${target} ${ARGN})
-    target_link_libraries(${target} PRIVATE gtest_main model_objects)
+    target_link_libraries(${target} PRIVATE gtest_main model_objects bag)
     target_sources(${target} PRIVATE
         ${CMAKE_SOURCE_DIR}/src/Controller/Market/src/Market.cpp
+        ${CMAKE_SOURCE_DIR}/src/Controller/Market/src/MarketController.cpp
         ${CMAKE_SOURCE_DIR}/src/Controller/Market/src/Shop.cpp
         ${CMAKE_SOURCE_DIR}/src/Controller/Market/src/ShopItem.cpp)
     target_include_directories(${target} PRIVATE
         ${CMAKE_SOURCE_DIR}/src/Controller/Market/include
+        ${CMAKE_SOURCE_DIR}/src/Model/Bag/include
         ${CMAKE_SOURCE_DIR}/src/Model/Objects/include
         ${CMAKE_SOURCE_DIR}/src/Model/Timeservice/include)
     target_compile_options(${target} PRIVATE -Wall -Wextra)
@@ -23,3 +25,6 @@ mudgame_add_market_test(market_trade_test
 
 mudgame_add_market_test(market_perf_test
     perf/market_perf_test.cpp)
+
+mudgame_add_market_test(market_controller_test
+    controller/market_controller_test.cpp)

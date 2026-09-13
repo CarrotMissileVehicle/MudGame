@@ -83,6 +83,7 @@ set(JERRY_SOURCES
         src/Controller/Farming/src/FarmingController.cpp
         src/Controller/Fishing/src/FishingController.cpp
         src/Controller/Market/src/Market.cpp
+        src/Controller/Market/src/MarketController.cpp
         src/Controller/Market/src/Shop.cpp
         src/Controller/Market/src/ShopItem.cpp
 )
