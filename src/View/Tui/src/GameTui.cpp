@@ -42,7 +42,8 @@ namespace mud::tui
         Component completions_renderer;
         Component question_renderer;
         Component hint_renderer;
-        Component root;
+        Component root;          // 内层：日志 + 底部输入区
+        Component top;           // 最终顶层：CatchEvent 包装 + 布局 Renderer
 
         explicit Impl(TuiState& s) : state(s) {}
     };
@@ -81,9 +82,9 @@ namespace mud::tui
     }
 
     // ========================================================================
-    // run()：构建 FTXUI 组件树并进入事件循环
+    // build()：构建 FTXUI 组件树（不进入事件循环）
     // ========================================================================
-    void GameTui::run()
+    void GameTui::build()
     {
         // ---- 动态完成列表（输入框上方，输入为空时隐藏）----
         impl_->completions_renderer = Renderer([&]() -> Element {
@@ -230,8 +231,30 @@ namespace mud::tui
             });
         });
 
-        // ---- 启动事件循环（阻塞直到 Exit）----
+        // ---- 初始焦点定向到输入框（根因修复）----
+        // FTXUI 键盘事件只派发到"当前聚焦组件"所在的焦点链；组件树初始
+        // selected_=0 使焦点落在日志区（日志区无子组件、Focusable()==false），
+        // 字符事件在 container.cpp 的 `if (!Focused()) return false` 处被整体
+        // 丢弃，导致"界面正常、有音乐、却无法输入命令"。TakeFocus() 沿 parent
+        // 链把每个容器的焦点指向 input_component，恢复键盘输入。
+        impl_->input_component->TakeFocus();
+
+        // 保存最终顶层组件（事件/渲染根），供 component_root() 与 run() 复用。
+        impl_->top = layout_renderer;
+    }
+
+    // ========================================================================
+    // component_root() / run()
+    // ========================================================================
+    ftxui::Component GameTui::component_root()
+    {
+        return impl_->top;
+    }
+
+    void GameTui::run()
+    {
+        build();
         app_ = std::make_unique<ftxui::App>(ftxui::App::Fullscreen());
-        app_->Loop(layout_renderer);
+        app_->Loop(impl_->top);
     }
 } // namespace mud::tui

@@ -9,3 +9,14 @@ endfunction()
 
 mudgame_add_view_test(view_panel_test
     panel_render_test.cpp)
+
+# view_tui 测试：GameTui 输入焦点 / 命令链路（离线注入事件，不进入真实循环）。
+function(mudgame_add_tui_test target)
+    add_executable(${target} ${ARGN})
+    target_link_libraries(${target} PRIVATE gtest_main view_tui)
+    target_compile_options(${target} PRIVATE -Wall -Wextra)
+    add_test(NAME ${target} COMMAND ${target})
+endfunction()
+
+mudgame_add_tui_test(tui_focus_test
+    tui_focus_test.cpp)

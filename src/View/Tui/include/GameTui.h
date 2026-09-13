@@ -29,6 +29,8 @@
 
 #include "TuiState.h"
 
+#include <ftxui/component/component.hpp>
+
 namespace ftxui { class App; }
 
 namespace mud::tui
@@ -49,9 +51,20 @@ namespace mud::tui
         void set_tick(std::function<void()> fn);
 
         /**
+         * @brief 构建组件树但不进入事件循环（供测试离线注入键盘事件）。
+         *
+         * run() 内部先调用本方法再启动 FTXUI Loop；测试可直接调用本方法，
+         * 通过注入 ftxui::Event 断言输入焦点与命令链路。
+         */
+        void build();
+
+        /** @brief 返回已构建的顶层组件树；未调用 build()/run() 时返回空。 */
+        ftxui::Component component_root();
+
+        /**
          * @brief 阻塞运行 FTXUI 事件循环（Fullscreen 模式）。
          *
-         * 调用后阻塞直到 Exit() 被触发。
+         * 调用后阻塞直到 Exit() 被触发。内部先 build() 再进入 Loop。
          */
         void run();
 
