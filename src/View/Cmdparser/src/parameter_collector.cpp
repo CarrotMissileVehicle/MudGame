@@ -58,8 +58,10 @@ bool ParameterCollector::collect(const mud::cmd::CommandSchema& schema,
                 }
                 if (param.required)
                 {
-                    renderer_.print("此参数为必填项，请重新输入。");
-                    continue; // 重新提示
+                    // 必填且输入为空：视为放弃收集（DEF-101：输入源耗尽时
+                    // 不得无限重提示，否则死循环且缓冲无限增长）
+                    renderer_.print("此参数为必填项，已取消本次输入。");
+                    return false;
                 }
                 // 非必填且无默认值，跳过
                 break;
