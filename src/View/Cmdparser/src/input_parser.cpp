@@ -7,6 +7,7 @@
  */
 #include "input_parser.h"
 
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -174,4 +175,24 @@ std::string InputParser::parse_verb_only(const std::string& line) const
         ++end;
 
     return line.substr(start, end - start);
+}
+
+bool mud::cmd::parse_double(const std::string& text, double& out)
+{
+    const auto begin = text.find_first_not_of(" \t\r\n");
+    if (begin == std::string::npos) return false;
+    const auto last = text.find_last_not_of(" \t\r\n");
+    const std::string trimmed = text.substr(begin, last - begin + 1);
+    try
+    {
+        std::size_t pos = 0;
+        const double value = std::stod(trimmed, &pos);
+        if (pos != trimmed.size() || !std::isfinite(value)) return false;
+        out = value;
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
 }

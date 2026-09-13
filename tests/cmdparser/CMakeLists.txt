@@ -19,7 +19,8 @@ mudgame_add_cmdparser_test(cmdparser_syntax_test
     syntax/input_parser_syntax_test.cpp)
 
 mudgame_add_cmdparser_test(cmdparser_semantic_test
-    semantic/input_parser_semantic_test.cpp)
+    semantic/input_parser_semantic_test.cpp
+    semantic/parse_double_test.cpp)
 
 mudgame_add_cmdparser_test(cmdparser_context_test
     context/state_gate_test.cpp)

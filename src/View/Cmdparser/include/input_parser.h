@@ -22,6 +22,15 @@
 namespace mud::cmd
 {
     /**
+     * @brief 数值参数安全解析：文本须为完整合法 double。
+     *
+     * 容忍首尾空白（交互输入残留），拒绝 nan/inf 与尾部杂字符；
+     * 失败返回 false 且不修改 out。供命令处理器替代裸 try/catch
+     * std::stod（DEF-102 下沉：非法倍率不再令 REPL 崩溃）。
+     */
+    bool parse_double(const std::string& text, double& out);
+
+    /**
      * @brief 解析后的命令结构。
      *
      * verb 为点分动词（如 mine.start）；args 为位置参数；
