@@ -270,3 +270,8 @@ docs/defect_analysis_report_master_20260908.md
 
 # --- 本地第三方依赖（pjh_json 拉取缓存等）---
 thirdparty/
+
+# --- 发布打包与临时评审产物 ---
+release-staging/
+result.json
+docs/assets/
