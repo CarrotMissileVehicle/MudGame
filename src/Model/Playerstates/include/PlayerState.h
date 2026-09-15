@@ -13,7 +13,8 @@ class PlayerState {
 public:
     virtual ~PlayerState() = default;
 
-    explicit PlayerState(int code);
+    // DEF-375：仅接受 StateCode 构造。int 重载曾让任意整数静默注入
+    // 非法状态码（无作用域枚举可隐式转 int），移除后编译期即拦截。
     explicit PlayerState(StateCode code);
 
     [[nodiscard]] const std::vector<StateCode> *GetAbleStatesByPos(PositionCode pos) const;
@@ -25,11 +26,11 @@ public:
 private:
     StateCode stateCode;
     std::map<PositionCode, std::vector<StateCode> > ableState = {
-        {AtHome, {Sleeping}},
-        {AtTown, {Shopping, Repairing}},
-        {AtCoast, {Fishing}},
-        {AtMine, {Mining}},
-        {AtFarmland, {Seeding, Watering, Fertilizing}}
+        {AtHome, {StateCode::Sleeping}},
+        {AtTown, {StateCode::Shopping, StateCode::Repairing}},
+        {AtCoast, {StateCode::Fishing}},
+        {AtMine, {StateCode::Mining}},
+        {AtFarmland, {StateCode::Seeding, StateCode::Watering, StateCode::Fertilizing}}
     };
 };
 

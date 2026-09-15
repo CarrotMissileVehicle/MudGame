@@ -9,6 +9,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
+#include <limits>
+
 namespace
 {
 using mud::time::GameDateTime;
@@ -132,5 +135,27 @@ TEST(Calendar, InvalidFieldsClampedNotUB) // TS-CE-009 非法输入夹紧，不�
     auto t = dt(0, 13, 1);
     t.advance(1);
     EXPECT_EQ(t, dt(0, 1, 1, 0, 1));
+}
+
+TEST(Calendar, AdvanceSaturatesHugePositiveDelta) // DEF-402 超大正增量饱和到年份上限
+{
+    auto t = dt(100, 6, 15, 12, 0);
+    t.advance(std::numeric_limits<std::int64_t>::max()); // 直接相加必溢出 UB
+    // 饱和到 32767-12-31 23:59（year 可表示的上限），字段仍合法
+    EXPECT_TRUE(t.valid());
+    EXPECT_EQ(t.total_minutes(), mud::time::kMaxTotalMinutes);
+    EXPECT_EQ(t.year, 32767);
+    EXPECT_EQ(t.month, 12u);
+    EXPECT_EQ(t.day, 31u);
+    EXPECT_EQ(t.hour, 23u);
+    EXPECT_EQ(t.minute, 59u);
+}
+
+TEST(Calendar, AdvanceSaturatesHugeNegativeDelta) // DEF-402 超大负增量饱和到纪元
+{
+    auto t = dt(50, 3, 10, 6, 30);
+    t.advance(std::numeric_limits<std::int64_t>::min()); // 直接相加必溢出 UB
+    EXPECT_EQ(t, dt(0, 1, 1, 0, 0));
+    EXPECT_EQ(t.total_minutes(), 0);
 }
 } // namespace

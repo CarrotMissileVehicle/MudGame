@@ -48,17 +48,17 @@ namespace mud::view
     {
         switch (code)
         {
-            case Waiting:     return "Waiting";
-            case Moving:      return "Moving";
-            case Watering:    return "Watering";
-            case Seeding:     return "Seeding";
-            case Fertilizing: return "Fertilizing";
-            case Sleeping:    return "Sleeping";
-            case Shopping:    return "Shopping";
-            case Repairing:   return "Repairing";
-            case Fishing:     return "Fishing";
-            case Mining:      return "Mining";
-            default:          return "Unknown";
+            case StateCode::Waiting:     return "Waiting";
+            case StateCode::Moving:      return "Moving";
+            case StateCode::Watering:    return "Watering";
+            case StateCode::Seeding:     return "Seeding";
+            case StateCode::Fertilizing: return "Fertilizing";
+            case StateCode::Sleeping:    return "Sleeping";
+            case StateCode::Shopping:    return "Shopping";
+            case StateCode::Repairing:   return "Repairing";
+            case StateCode::Fishing:     return "Fishing";
+            case StateCode::Mining:      return "Mining";
+            default:                     return "Unknown";
         }
     }
 } // namespace mud::view

@@ -5,7 +5,7 @@
 #include "../include/Player.h"
 
 Player::Player()
-    : position(AtHome), state(Waiting), satiety(100), maxSatiety(100),
+    : position(AtHome), state(StateCode::Waiting), satiety(100), maxSatiety(100),
       farmingExperience(0), fishExperience(0), mineExperience(0) {
 }
 

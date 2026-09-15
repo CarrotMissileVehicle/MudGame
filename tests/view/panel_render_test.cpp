@@ -30,7 +30,7 @@ TEST(ViewPanelTest, StatusPanelRendersPlayerFields)
     StatusPanel panel(r);
     PlayerStatus s{};
     s.position = AtFarmland;
-    s.state = Waiting;
+    s.state = StateCode::Waiting;
     s.satiety = 70;
     s.maxSatiety = 100;
     s.farmingExp = 12;
@@ -247,7 +247,7 @@ TEST(ViewPanelTest, TerminalViewPrintsWeatherOnce)
     snap.time.hour = 8; snap.time.minute = 0;
     snap.weather.weather = "晴天";
     snap.player.position = AtTown;
-    snap.player.state = Waiting;
+    snap.player.state = StateCode::Waiting;
     snap.mining.is_mining = false;
     snap.mining.mining_level = 1;
     snap.fishing.can_fish = true;
@@ -268,7 +268,7 @@ TEST(ViewPanelTest, TerminalViewRenderAllComposesPanels)
     snap.time.hour = 8; snap.time.minute = 0;
     snap.weather.weather = "晴天";
     snap.player.position = AtTown;
-    snap.player.state = Waiting;
+    snap.player.state = StateCode::Waiting;
     snap.player.satiety = 100;
     snap.player.maxSatiety = 100;
     snap.mining.is_mining = false;

@@ -14,6 +14,14 @@
 
 namespace mud::time
 {
+    /** @brief 总分钟数上界：32767-12-31 23:59 距纪元的总分钟数（DEF-402）。 */
+    inline constexpr std::int64_t kMaxTotalMinutes = [] {
+        const auto days =
+            std::chrono::sys_days{std::chrono::year{32767} / 12 / 31} -
+            std::chrono::sys_days{std::chrono::year{0} / 1 / 1};
+        return days.count() * 1440LL + 23 * 60 + 59;
+    }();
+
     /** @brief 游戏时间：显式日历字段，最小粒度=分钟，纪元=0年1月1日 00:00。 */
     struct GameDateTime
     {
@@ -58,8 +66,19 @@ namespace mud::time
         /** @brief 向后推进 minutes 分钟（可为负），处理分→时→日→月→年进位。 */
         void advance(std::int64_t minutes)
         {
-            std::int64_t total = total_minutes() + minutes;
-            if (total < 0) total = 0; // 不得早于纪元
+            const std::int64_t cur = total_minutes();
+            // DEF-402：饱和运算防有符号溢出。minutes 可来自外部（如存档
+            // gameTotalMinutes 经 advance() 重建时钟），极大正/负值会让
+            // cur + minutes 溢出为 UB。上界 = std::chrono::year 合法区间
+            // 上限（32767 年 12 月 31 日 23:59）对应的总分钟数，超过后
+            // ymd.year() 写回 year 会使下一次 total_minutes() 进入非法输入。
+            std::int64_t total;
+            if (minutes > 0 && cur > kMaxTotalMinutes - minutes)
+                total = kMaxTotalMinutes;
+            else if (minutes < 0 && minutes < -cur)
+                total = 0;
+            else
+                total = cur + minutes;
             const std::int64_t days = total / 1440;
             const std::int64_t rem = total % 1440;
             const auto ymd = std::chrono::year_month_day{

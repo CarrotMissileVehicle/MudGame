@@ -1009,7 +1009,9 @@ int main()
     {
         PlayerSerializer serializer;
         std::int64_t totalMinutes = -1;
-        if (!serializer.Load(kSaveFileName, player, game, gold, tools, totalMinutes))
+        // DEF-385：显式区分读档失败原因（文件不存在 / 损坏）
+        if (serializer.Load(kSaveFileName, player, game, gold, tools, totalMinutes)
+            != PlayerSerializer::LoadStatus::Ok)
         {
             msg(std::string("读档失败：没有找到存档 ") + kSaveFileName + "。");
             return HandlerResult::Failed;

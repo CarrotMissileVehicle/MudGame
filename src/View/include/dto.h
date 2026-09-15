@@ -22,13 +22,14 @@
  */
 struct PlayerStatus
 {
-    PositionCode position;
-    StateCode state;
-    int satiety;
-    int maxSatiety;
-    int farmingExp;
-    int fishExp;
-    int mineExp;
+    // DEF-410：全部字段显式默认初始化，装配方漏填任一字段也不会渲染随机脏数据
+    PositionCode position = AtHome;
+    StateCode state = StateCode::Waiting;
+    int satiety = 0;
+    int maxSatiety = 0;
+    int farmingExp = 0;
+    int fishExp = 0;
+    int mineExp = 0;
     std::vector<std::string> bagItems;
 };
 

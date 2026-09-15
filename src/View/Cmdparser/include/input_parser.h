@@ -73,7 +73,16 @@ class InputParser
 public:
     InputParser();
 
-    /** @brief 传统解析：完整命令行（含参数）→ Command。 */
+    /**
+     * @brief 传统解析：完整命令行（含参数）→ Command。
+     *
+     * @return 哨兵契约（DEF-396，调用方必须据此分发，不得把 verb 当普通命令执行）：
+     *   - verb 为空串：空输入（无命令）；
+     *   - verb == "error"：解析失败，错误文本已直接输出到 std::cout（历史遗留，
+     *     未走 Renderer 抽象，测试中仅能通过 verb 判定）；
+     *   - verb == "help"：用户请求帮助，应展示 help_text()；
+     *   - 其余：成功解析出的点分动词（如 "mine.start"）。
+     */
     mud::cmd::Command parse(const std::string& line);
 
     /** @brief 交互模式：仅从输入行提取 verb（忽略后续参数）。 */

@@ -124,7 +124,9 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
     connector.bind("load", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         PlayerSerializer serializer;
         std::int64_t totalMinutes = -1;
-        if (!serializer.Load(kSaveFileName, ctx.player, ctx.game, ctx.gold, ctx.tools, totalMinutes)) {
+        // DEF-385：显式区分读档失败原因（文件不存在 / 损坏）
+        if (serializer.Load(kSaveFileName, ctx.player, ctx.game, ctx.gold, ctx.tools, totalMinutes)
+            != PlayerSerializer::LoadStatus::Ok) {
             ctx.msg(std::string("读档失败：没有找到存档 ") + kSaveFileName + "。");
             return HandlerResult::Failed;
         }

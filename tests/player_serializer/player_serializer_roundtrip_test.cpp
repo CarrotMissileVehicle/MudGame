@@ -35,7 +35,7 @@ TEST(PlayerSerializerRoundTrip, FullFieldsSurvive)
     const auto path = temp_save_path("full");
     std::remove(path.string().c_str());
 
-    Player src(AtTown, Shopping, 66, 100, 15, 4, 7);
+    Player src(AtTown, StateCode::Shopping, 66, 100, 15, 4, 7);
     src.GetBag().AddObject(new Object("黯铁矿", "矿石", 0, 20, 0));
     src.GetBag().AddObject(new Object("黯铁矿", "矿石", 0, 20, 0)); // 应合并为同一堆叠 x2
 
@@ -54,10 +54,11 @@ TEST(PlayerSerializerRoundTrip, FullFieldsSurvive)
     long long dstGold = 0;
     mud::tool::ToolController dstTools;
     std::int64_t dstMin = -1;
-    ASSERT_TRUE(ser.Load(path.string(), dst, dstGame, dstGold, dstTools, dstMin));
+    ASSERT_EQ(ser.Load(path.string(), dst, dstGame, dstGold, dstTools, dstMin),
+              PlayerSerializer::LoadStatus::Ok);
 
     EXPECT_EQ(dst.GetPosition(), AtTown);
-    EXPECT_EQ(dst.GetState(), Shopping);
+    EXPECT_EQ(dst.GetState(), StateCode::Shopping);
     EXPECT_EQ(dst.GetSatiety(), 66);
     EXPECT_EQ(dst.GetMaxSatiety(), 100);
     EXPECT_EQ(dst.GetFarmingExp(), 15);
@@ -95,13 +96,14 @@ TEST(PlayerSerializerRoundTrip, LoadReplacesBagContentsWithoutDoubleFree)
     PlayerSerializer ser;
     ASSERT_TRUE(ser.Save(path.string(), src, Game{}, 0, mud::tool::ToolController{}, 0));
 
-    Player dst(AtMine, Mining, 100, 100, 0, 0, 0);
+    Player dst(AtMine, StateCode::Mining, 100, 100, 0, 0, 0);
     dst.GetBag().AddObject(new Object("旧物", "占位", 0, 1, 1)); // 读档前旧背包内容
     Game dstGame2;
     long long dstGold2 = 0;
     mud::tool::ToolController dstTools2;
     std::int64_t dstMin2 = -1;
-    ASSERT_TRUE(ser.Load(path.string(), dst, dstGame2, dstGold2, dstTools2, dstMin2));
+    ASSERT_EQ(ser.Load(path.string(), dst, dstGame2, dstGold2, dstTools2, dstMin2),
+              PlayerSerializer::LoadStatus::Ok);
 
     // 旧背包内容被存档内容替换（而非追加共享指针）
     ASSERT_EQ(dst.GetBag().GetSize(), 1u);
@@ -137,7 +139,8 @@ TEST(PlayerSerializerRoundTrip, LegacySaveKeepsCallerDefaults)
     Player dst;
     Game dstGame;
     std::int64_t dstMin = -1;
-    ASSERT_TRUE(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin));
+    ASSERT_EQ(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin),
+              PlayerSerializer::LoadStatus::Ok);
 
     EXPECT_EQ(gold, 777);                     // 无 gold 段：保持调用方
     EXPECT_EQ(tools.durability(mud::tool::ToolId::Pickaxe), intactDura); // 无工具段：不覆盖

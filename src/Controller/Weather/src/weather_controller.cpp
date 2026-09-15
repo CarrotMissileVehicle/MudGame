@@ -1,5 +1,6 @@
 #include "weather_controller.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <random>
 
@@ -33,6 +34,14 @@ void WeatherController::update()
 
     // 1) 跨天：新的一天
     if (day_index != last_weather_day_ && hour >= 6) {
+        // DEF-347：帧推进可能一次跨多天（time_scale>1、睡觉/快进/调试跳过），
+        // 中间天没有任何浇水动作，逐日补算未浇水天数，避免虫害判定
+        // （neglect_days_ >= 3）因漏计而永不触发。
+        const long long skipped_mid = std::max<long long>(0, day_index - last_weather_day_ - 1);
+        if (skipped_mid > 0) {
+            neglect_days_ += static_cast<int>(std::min<long long>(skipped_mid, 1000000));
+        }
+
         // 上一天若无任何浇水（自动/手动都无）则计入未浇水天数，否则清零
         if (!watered_today_) {
             ++neglect_days_;

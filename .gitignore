@@ -64,8 +64,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -173,6 +173,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
@@ -232,7 +234,7 @@ CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
 compile_commands.json
-Makefile
+/Makefile
 
 # --- 生产环境 / 运行期数据 ---
 *.log

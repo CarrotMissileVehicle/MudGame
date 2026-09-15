@@ -83,20 +83,21 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player) {
     return Save(filename, player, game, 0, mud::tool::ToolController{}, 0);
 }
 
-bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& game, long long& gold,
+PlayerSerializer::LoadStatus PlayerSerializer::Load(const std::string& filename, Player& player, Game& game, long long& gold,
                             mud::tool::ToolController& tools, std::int64_t& totalGameMinutes) {
     std::ifstream file(filename);
     if (!file.is_open()) {
-        return false;
+        return LoadStatus::NotFound;
     }
 
     PositionCode pos = AtHome;
-    StateCode state = Waiting;
+    StateCode state = StateCode::Waiting;
     int satiety = 100, maxSatiety = 100;
     int farmingExp = 0, fishExp = 0, mineExp = 0;
     long long goldInFile = 0;   // DEF-007：金币 64 位，支持大额数值
     bool hasGold = false;
     bool hasTotalMinutes = false;
+    std::int64_t totalMinutesInFile = 0;  // DEF-385：局部解析，成功才提交引用
     long long saveOpenYear = 0, saveOpenMonth = 1, saveOpenDay = 0, saveOpenHour = 0, saveOpenMinute = 0;
     long long totalPlaySeconds = 0;
 
@@ -146,7 +147,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
                 totalPlaySeconds = to_ll_or(value, totalPlaySeconds);
             } else if (key == "gameTotalMinutes") {
                 // DEF-104：损坏视为无该段，保持调用方初值
-                try { totalGameMinutes = std::stoll(value); hasTotalMinutes = true; }
+                try { totalMinutesInFile = std::stoll(value); hasTotalMinutes = true; }
                 catch (...) { /* 忽略非法总分钟 */ }
             } else if (key == "toolHoeLevel") {
                 hoeLevel = to_int_or(value, hoeLevel);
@@ -193,6 +194,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     }
     game.setTotalPlayTime(seconds(totalPlaySeconds));
 
+    if (hasTotalMinutes) totalGameMinutes = totalMinutesInFile;  // DEF-385：整体成功才提交
     if (hasGold) gold = goldInFile;
     // 仅当存档含工具状态段时还原；旧存档缺省保持调用方现有工具（满耐久/1级）
     if (hasTools) {
@@ -200,7 +202,7 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
         tools.restore(mud::tool::ToolId::Rod, rodLevel, rodDurability);
         tools.restore(mud::tool::ToolId::Pickaxe, pickLevel, pickDurability);
     }
-    (void)hasTotalMinutes; // gameTotalMinutes 不存在时仅保持调用方初值
+    (void)hasTotalMinutes; // gameTotalMinutes 提交已在上方完成
 
     for (const auto& itemLine : itemLines) {
         std::istringstream itemIss(itemLine);
@@ -225,10 +227,10 @@ bool PlayerSerializer::Load(const std::string& filename, Player& player, Game& g
     }
 
     file.close();
-    return true;
+    return LoadStatus::Ok;
 }
 
-bool PlayerSerializer::Load(const std::string& filename, Player& player) {
+PlayerSerializer::LoadStatus PlayerSerializer::Load(const std::string& filename, Player& player) {
     Game game;
     long long gold = 0;
     mud::tool::ToolController tools;
@@ -249,17 +251,17 @@ std::string PlayerSerializer::GetPositionName(PositionCode code) const {
 
 std::string PlayerSerializer::GetStateName(StateCode code) const {
     switch (code) {
-        case Waiting:       return "Waiting";
-        case Moving:        return "Moving";
-        case Watering:      return "Watering";
-        case Seeding:       return "Seeding";
-        case Fertilizing:   return "Fertilizing";
-        case Sleeping:      return "Sleeping";
-        case Shopping:      return "Shopping";
-        case Repairing:     return "Repairing";
-        case Fishing:       return "Fishing";
-        case Mining:        return "Mining";
-        default:            return "Unknown";
+        case StateCode::Waiting:       return "Waiting";
+        case StateCode::Moving:        return "Moving";
+        case StateCode::Watering:      return "Watering";
+        case StateCode::Seeding:       return "Seeding";
+        case StateCode::Fertilizing:   return "Fertilizing";
+        case StateCode::Sleeping:      return "Sleeping";
+        case StateCode::Shopping:      return "Shopping";
+        case StateCode::Repairing:     return "Repairing";
+        case StateCode::Fishing:       return "Fishing";
+        case StateCode::Mining:        return "Mining";
+        default:                       return "Unknown";
     }
 }
 
@@ -273,15 +275,15 @@ PositionCode PlayerSerializer::ParsePosition(const std::string& name) const {
 }
 
 StateCode PlayerSerializer::ParseState(const std::string& name) const {
-    if (name == "Waiting") return Waiting;
-    if (name == "Moving") return Moving;
-    if (name == "Watering") return Watering;
-    if (name == "Seeding") return Seeding;
-    if (name == "Fertilizing") return Fertilizing;
-    if (name == "Sleeping") return Sleeping;
-    if (name == "Shopping") return Shopping;
-    if (name == "Repairing") return Repairing;
-    if (name == "Fishing") return Fishing;
-    if (name == "Mining") return Mining;
-    return Waiting;
+    if (name == "Waiting") return StateCode::Waiting;
+    if (name == "Moving") return StateCode::Moving;
+    if (name == "Watering") return StateCode::Watering;
+    if (name == "Seeding") return StateCode::Seeding;
+    if (name == "Fertilizing") return StateCode::Fertilizing;
+    if (name == "Sleeping") return StateCode::Sleeping;
+    if (name == "Shopping") return StateCode::Shopping;
+    if (name == "Repairing") return StateCode::Repairing;
+    if (name == "Fishing") return StateCode::Fishing;
+    if (name == "Mining") return StateCode::Mining;
+    return StateCode::Waiting;
 }

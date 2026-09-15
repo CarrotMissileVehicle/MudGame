@@ -14,7 +14,10 @@ public:
     Bag() = default;
     ~Bag();
 
-    // 深拷贝语义：复制堆叠对象（共享指针会引发双重释放）
+    // 深拷贝语义：复制堆叠对象（共享指针会引发双重释放）。
+    // 注意 Object 为多态基类，拷贝按基类值复制（切片）；当前背包仅存放
+    // Object 基类实例（收获/渔获/矿石均为 new Object），无派生数据可丢失，
+    // 故该语义安全。若未来入包派生类型，须为 Object 增加 virtual clone()。
     Bag(const Bag& other);
     Bag& operator=(const Bag& other);
     Bag(Bag&& other) noexcept;

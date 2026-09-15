@@ -54,7 +54,8 @@ TEST(LoadRobustness, CorruptedNumericsFallbackNoCrash) // DEF-104
     mud::tool::ToolController tools;
     std::int64_t dstMin = -1;
 
-    EXPECT_TRUE(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin));
+    EXPECT_EQ(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin),
+              PlayerSerializer::LoadStatus::Ok);
     EXPECT_EQ(dst.GetPosition(), AtTown);
     // 非法数值回退默认：饱食 100/100、经验 0
     EXPECT_EQ(dst.GetSatiety(), 100);
@@ -85,7 +86,8 @@ TEST(LoadRobustness, InvalidCalendarKeepsDefaultNoCrash) // DEF-105
     mud::tool::ToolController tools;
     std::int64_t dstMin = -1;
 
-    EXPECT_TRUE(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin));
+    EXPECT_EQ(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin),
+              PlayerSerializer::LoadStatus::Ok);
     // 非法日历（月=0、日=32）：不设存档时间，保持默认（等价全新 Game）
     Game fresh;
     EXPECT_EQ(dstGame.getSaveOpenTime().total_minutes(),
@@ -114,7 +116,8 @@ TEST(LoadRobustness, CorruptedItemFieldsFallbackNoCrash) // DEF-104
     mud::tool::ToolController tools;
     std::int64_t dstMin = -1;
 
-    EXPECT_TRUE(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin));
+    EXPECT_EQ(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin),
+              PlayerSerializer::LoadStatus::Ok);
     ASSERT_EQ(dst.GetBag().GetSize(), 2u);
     // 非法健康度/售价回退 0；非法数量回退 1；合法字段不受影响
     const auto& objs = dst.GetBag().GetObjects();
@@ -127,4 +130,25 @@ TEST(LoadRobustness, CorruptedItemFieldsFallbackNoCrash) // DEF-104
     EXPECT_EQ(objs[1]->GetQuantity(), 1);
 
     std::remove(path.string().c_str());
+}
+
+TEST(LoadRobustness, MissingFileReportsNotFound) // DEF-385
+{
+    const auto path = temp_save_path("missing");
+    std::remove(path.string().c_str()); // 确保文件不存在
+
+    PlayerSerializer ser;
+    Player dst;
+    Game dstGame;
+    long long gold = 42;
+    mud::tool::ToolController tools;
+    std::int64_t dstMin = -1;
+
+    EXPECT_EQ(ser.Load(path.string(), dst, dstGame, gold, tools, dstMin),
+              PlayerSerializer::LoadStatus::NotFound);
+    // 失败时输出参数必须保持不变（commit-on-success）
+    EXPECT_EQ(gold, 42);
+    EXPECT_EQ(dstMin, -1);
+    EXPECT_EQ(dst.GetSatiety(), 100);     // 默认 Player 初值：饱食 100，Load 未触碰
+    EXPECT_EQ(dst.GetMaxSatiety(), 100);
 }
