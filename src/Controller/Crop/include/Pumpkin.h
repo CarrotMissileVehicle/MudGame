@@ -11,9 +11,6 @@ public:
     Pumpkin();
 
     ~Pumpkin() override;
-
-    void grow() override;
-    void harvest() override;
 };
 
 

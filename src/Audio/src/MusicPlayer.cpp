@@ -24,6 +24,33 @@ namespace mud::audio
             // 返回 0 表示成功；出错时返回值非 0。
             return mciSendStringW(cmd.c_str(), nullptr, 0, nullptr) == 0;
         }
+
+        /**
+         * @brief 窄字符串→宽字符串（项目源码/路径为 UTF-8，MSVC /utf-8）。
+         *
+         * 逐字节零扩展（std::wstring(s.begin(), s.end())）会使非 ASCII 字符
+         * 变成错误码元，导致 MCI 找不到文件；此处优先按 UTF-8 转换，
+         * 失败时退回系统 ANSI 代码页。
+         */
+        std::wstring to_wide(const std::string& s)
+        {
+            if (s.empty())
+                return {};
+            const int len = static_cast<int>(s.size());
+            int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                                        s.data(), len, nullptr, 0);
+            UINT cp = CP_UTF8;
+            if (n <= 0)
+            {
+                cp = CP_ACP;
+                n = MultiByteToWideChar(cp, 0, s.data(), len, nullptr, 0);
+            }
+            if (n <= 0)
+                return {};
+            std::wstring out(static_cast<std::size_t>(n), L'\0');
+            MultiByteToWideChar(cp, 0, s.data(), len, out.data(), n);
+            return out;
+        }
     } // namespace
 
     MusicPlayer::~MusicPlayer()
@@ -35,10 +62,16 @@ namespace mud::audio
     {
         stop(); // 幂等：若残留旧设备先关闭
 
-        // 路径转宽字符（MCI 命令使用宽字符串；路径须加引号以容忍空格）
-        // 注意：窄→宽为字节扩展，ASCII 资源路径（编译期 MUDGAME_RES_DIR）足够。
+        // 路径经 UTF-8→宽字符转换后拼入 MCI 命令串。路径中含双引号或控制字符
+        // 会提前终结引号参数并注入额外 MCI 指令（命令注入），一律拒绝。
+        for (const char ch : file)
+            if (ch == '"' || (static_cast<unsigned char>(ch) < 0x20))
+                return false;
+
         // MCI 对反斜杠更友好，统一将 '/' 规范化为 '\'。
-        std::wstring wpath(file.begin(), file.end());
+        std::wstring wpath = to_wide(file);
+        if (wpath.empty())
+            return false;
         for (auto& ch : wpath)
             if (ch == L'/')
                 ch = L'\\';

@@ -11,9 +11,6 @@ public:
     Lingzhi();
 
     ~Lingzhi() override;
-
-    void grow() override;
-    void harvest() override;
 };
 
 

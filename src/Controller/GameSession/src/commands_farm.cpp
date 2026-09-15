@@ -11,16 +11,17 @@
 
 void GameCommands::register_farm(Connector& connector, GameContext& ctx)
 {
-    connector.bind("farm.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("farm.status", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.view.render_farm(ctx.make_farm_view());
         return HandlerResult::Ok;
     });
 
-    const auto valid_plot = [&](std::size_t idx) {
-        return idx < ctx.farming.farmSize();
+    // 供各 handler 按值捕获，避免 register_farm 返回后对本地闭包的悬垂引用
+    const auto valid_plot = [](const GameContext& c, std::size_t idx) {
+        return idx < c.farming.farmSize();
     };
 
-    connector.bind("farm.sow", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("farm.sow", [ctx, valid_plot](const mud::cmd::Command& cmd, const HandlerContext&) {
         if (ctx.player.GetPosition() != AtFarmland) {
             ctx.msg("你不在农田。");
             return HandlerResult::Failed;
@@ -37,7 +38,7 @@ void GameCommands::register_farm(Connector& connector, GameContext& ctx)
             ctx.msg("作物未解锁（需种植经验 ≥ " + std::to_string(crop->getUnlockLevel() * 100) + "）。");
             return HandlerResult::Failed;
         }
-        if (!valid_plot(idx) || !ctx.farming.sow(idx, it->second)) {
+        if (!valid_plot(ctx, idx) || !ctx.farming.sow(idx, it->second)) {
             ctx.msg("播种失败（地块占用或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -47,13 +48,13 @@ void GameCommands::register_farm(Connector& connector, GameContext& ctx)
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.water", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("farm.water", [ctx, valid_plot](const mud::cmd::Command& cmd, const HandlerContext&) {
         if (ctx.player.GetPosition() != AtFarmland) {
             ctx.msg("你不在农田。");
             return HandlerResult::Failed;
         }
         const std::size_t idx = static_cast<std::size_t>(ctx.opt_int(cmd, "plot", 0));
-        if (!valid_plot(idx) || !ctx.farming.water(idx)) {
+        if (!valid_plot(ctx, idx) || !ctx.farming.water(idx)) {
             ctx.msg("浇水失败（地块无作物或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -64,7 +65,7 @@ void GameCommands::register_farm(Connector& connector, GameContext& ctx)
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.fertilize", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("farm.fertilize", [ctx, valid_plot](const mud::cmd::Command& cmd, const HandlerContext&) {
         if (ctx.player.GetPosition() != AtFarmland) {
             ctx.msg("你不在农田。");
             return HandlerResult::Failed;
@@ -78,7 +79,7 @@ void GameCommands::register_farm(Connector& connector, GameContext& ctx)
             ctx.msg("未知肥料类型：" + type + "（normal/advanced）");
             return HandlerResult::BadArgument;
         }
-        if (!valid_plot(idx) || !ctx.farming.fertilize(idx, fert)) {
+        if (!valid_plot(ctx, idx) || !ctx.farming.fertilize(idx, fert)) {
             ctx.msg("施肥失败（地块无作物或索引越界）。");
             return HandlerResult::Failed;
         }
@@ -88,13 +89,13 @@ void GameCommands::register_farm(Connector& connector, GameContext& ctx)
         return HandlerResult::Ok;
     });
 
-    connector.bind("farm.harvest", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("farm.harvest", [ctx, valid_plot](const mud::cmd::Command& cmd, const HandlerContext&) {
         if (ctx.player.GetPosition() != AtFarmland) {
             ctx.msg("你不在农田。");
             return HandlerResult::Failed;
         }
         const std::size_t idx = static_cast<std::size_t>(ctx.opt_int(cmd, "plot", 0));
-        if (!valid_plot(idx)) {
+        if (!valid_plot(ctx, idx)) {
             ctx.msg("地块索引越界。");
             return HandlerResult::BadArgument;
         }

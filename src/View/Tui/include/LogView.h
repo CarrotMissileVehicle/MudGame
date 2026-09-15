@@ -46,6 +46,7 @@ namespace mud::tui
         ftxui::Box box_;            // 上一帧日志视口区域（由 reflect 记录）
         int scroll_ = 0;            // 当前滚动偏移（行，0 = 最顶部）
         bool auto_follow_ = true;   // 是否跟随底部
-        std::size_t seen_logs_ = 0; // 上次渲染时已处理的日志条数
+        std::size_t seen_appended_ = 0; // 上次渲染时已处理的累计追加条数
+        std::size_t seen_evicted_ = 0;  // 上次渲染时已处理的累计裁剪条数
     };
 } // namespace mud::tui

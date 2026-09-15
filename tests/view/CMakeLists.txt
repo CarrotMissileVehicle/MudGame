@@ -20,3 +20,6 @@ endfunction()
 
 mudgame_add_tui_test(tui_focus_test
     tui_focus_test.cpp)
+
+mudgame_add_tui_test(tui_state_test
+    tui_state_test.cpp)

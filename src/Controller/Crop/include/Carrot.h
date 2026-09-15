@@ -11,9 +11,6 @@ public:
     Carrot();
 
     ~Carrot() override;
-
-    void grow() override;
-    void harvest() override;
 };
 
 

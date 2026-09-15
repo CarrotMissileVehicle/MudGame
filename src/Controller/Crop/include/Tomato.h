@@ -11,9 +11,6 @@ public:
     Tomato();
 
     ~Tomato() override;
-
-    void grow() override;
-    void harvest() override;
 };
 
 

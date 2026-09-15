@@ -21,12 +21,12 @@ namespace
 void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEngine& world)
 {
     // 时间
-    connector.bind("time.now", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("time.now", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.render_now();
         return HandlerResult::Ok;
     });
 
-    connector.bind("time.scale", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("time.scale", [ctx](const mud::cmd::Command& cmd, const HandlerContext&) {
         const double factor = std::stod(cmd.options.at("factor"));
         ctx.time.set_time_scale(factor);
         ctx.view.render_time_scale(factor);
@@ -34,13 +34,14 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
     });
 
     // 玩家状态 / 移动
-    connector.bind("player.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("player.status", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.view.render_status(ctx.make_player_status());
         return HandlerResult::Ok;
     });
 
     const auto bind_move = [&](const std::string& verb, bool (Move::*fn)()) {
-        connector.bind(verb, [&, fn](const mud::cmd::Command&, const HandlerContext&) {
+        // 按值捕获 ctx/fn：不持有 register_misc 返回后失效的本地闭包（bind_move 本身）
+        connector.bind(verb, [ctx, fn](const mud::cmd::Command&, const HandlerContext&) {
             if (!ctx.weather.can_go_outside()) {
                 ctx.msg(ctx.weather.weather_name() + "天不宜外出。");
                 return HandlerResult::Failed;
@@ -63,12 +64,12 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
 
     // 钓鱼（TUI 非阻塞版）：启动后由 handle_action_tick 按 3-6 秒节奏推进，
     // 输入 q 或再次 fish.tick（动作进行中）可结束。可反复 start/stop。
-    connector.bind("fish.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("fish.status", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.view.render_fishing(ctx.make_fishing_view());
         return HandlerResult::Ok;
     });
 
-    connector.bind("fish.tick", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("fish.tick", [ctx, world](const mud::cmd::Command&, const HandlerContext&) {
         if (ctx.tui.action_type == mud::tui::ActionType::Fish) {
             world.end_fishing(true);
             return HandlerResult::Ok;
@@ -97,13 +98,13 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
     });
 
     // 天气
-    connector.bind("weather.now", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("weather.now", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.view.render_weather(ctx.make_weather_view());
         return HandlerResult::Ok;
     });
 
     // 存档 / 读档
-    connector.bind("save", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("save", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         PlayerSerializer serializer;
         if (serializer.Save(kSaveFileName, ctx.player, ctx.game, ctx.gold, ctx.tools,
                             ctx.time.session_total())) {
@@ -114,7 +115,7 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
         return HandlerResult::Ok;
     });
 
-    connector.bind("load", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("load", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         PlayerSerializer serializer;
         std::int64_t totalMinutes = -1;
         if (!serializer.Load(kSaveFileName, ctx.player, ctx.game, ctx.gold, ctx.tools, totalMinutes)) {

@@ -119,3 +119,19 @@ TEST(BagStackTest, MoveTransfersOwnershipWithoutDoubleFree)
     EXPECT_EQ(a.GetSize(), 0u); // 源包被清空，不再持有指针
     b.RemoveObject("小麦");     // 释放后不崩溃
 }
+
+TEST(BagStackTest, RemoveObjectRejectsNonPositiveCount)
+{
+    Bag bag;
+    bag.AddObject(new Object("小麦", "农作物", 0, 5, 3));
+    bag.AddObject(new Object("小麦", "农作物", 0, 5, 3));
+    bag.AddObject(new Object("小麦", "农作物", 0, 5, 3));
+    EXPECT_EQ(bag.CountObject("小麦"), 3);
+    // 零与负数计数：拒绝且不得改变背包任何状态
+    EXPECT_EQ(bag.RemoveObject("小麦", 0), 0);
+    EXPECT_EQ(bag.RemoveObject("小麦", -3), 0);
+    EXPECT_EQ(bag.CountObject("小麦"), 3);
+    EXPECT_EQ(bag.GetSize(), 1u);
+    EXPECT_EQ(bag.RemoveObject("不存在", -1), 0);
+    EXPECT_EQ(bag.GetSize(), 1u);
+}

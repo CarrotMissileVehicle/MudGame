@@ -66,6 +66,10 @@ void Bag::AddUnique(Object* obj) {
 }
 
 int Bag::RemoveObject(const std::string& name, int count) {
+    // 拒绝非正数：负数会让 std::min 反向“增加”堆叠数量，破坏背包状态
+    if (count <= 0) {
+        return 0;
+    }
     for (auto it = objects.begin(); it != objects.end(); ++it) {
         if ((*it)->GetName() != name) continue;
         Object* obj = *it;

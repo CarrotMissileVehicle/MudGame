@@ -110,4 +110,27 @@ TEST(Calendar, ComparisonOrdersChronologically) // 字典序比较即时间顺�
     EXPECT_LT(dt(1, 12, 31, 23, 59), dt(2, 1, 1, 0, 0));
     EXPECT_LT(dt(0, 1, 1, 0, 0), dt(0, 1, 1, 0, 1));
 }
+
+TEST(Calendar, InvalidFieldsDetectedByValid) // TS-CE-008 非法日历字段校验
+{
+    EXPECT_FALSE(dt(0, 13, 1).valid());      // 月越界
+    EXPECT_FALSE(dt(3, 2, 29).valid());      // 平年 2/29
+    EXPECT_FALSE(dt(0, 1, 32).valid());      // 日越界
+    EXPECT_FALSE(dt(0, 1, 1, 24, 0).valid()); // 时越界
+    EXPECT_FALSE(dt(0, 1, 1, 0, 60).valid()); // 分越界
+    EXPECT_TRUE(dt(4, 2, 29).valid());       // 闰年 2/29 合法
+    EXPECT_TRUE(dt(0, 1, 1, 23, 59).valid());
+}
+
+TEST(Calendar, InvalidFieldsClampedNotUB) // TS-CE-009 非法输入夹紧，不进入未定义行为
+{
+    // 非法字段不再被直接塞进 ymd 转 sys_days，而是按纪元起点（0 分钟）夹紧
+    EXPECT_EQ(dt(0, 13, 1).total_minutes(), 0);
+    EXPECT_EQ(dt(3, 2, 29).total_minutes(), 0);
+
+    // advance() 首行调用 total_minutes()，非法字段同样不得触发 UB
+    auto t = dt(0, 13, 1);
+    t.advance(1);
+    EXPECT_EQ(t, dt(0, 1, 1, 0, 1));
+}
 } // namespace

@@ -26,9 +26,26 @@ namespace mud::time
         /** @brief 默认字典序比较即时间顺序（年→月→日→时→分）。 */
         auto operator<=>(const GameDateTime&) const = default;
 
+        /** @brief 校验日历字段是否合法（月 1-12、日与年月匹配、时 0-23、分 0-59）。 */
+        [[nodiscard]] bool valid() const noexcept
+        {
+            if (hour > 23 || minute > 59)
+                return false;
+            const std::chrono::year_month_day ymd{
+                std::chrono::year{year},
+                std::chrono::month{month},
+                std::chrono::day{day}};
+            return ymd.ok();
+        }
+
         /** @brief 返回距纪元（0年1月1日 00:00）的总分钟数，供持久化与比较。 */
         [[nodiscard]] std::int64_t total_minutes() const
         {
+            // 前置条件：字段合法。非法字段（month>12、day>31、平年 2/29 等）转换
+            // ymd 为 sys_days 是未定义行为，一律按纪元起点（0 分钟）夹紧处理，
+            // 保证任何输入（含存档反序列化）都不会进入 UB。
+            if (!valid())
+                return 0;
             const std::chrono::year_month_day ymd{
                 std::chrono::year{year},
                 std::chrono::month{month},

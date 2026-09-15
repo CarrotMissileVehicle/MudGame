@@ -11,9 +11,6 @@ public:
     Cabbage();
 
     ~Cabbage() override;
-
-    void grow() override;
-    void harvest() override;
 };
 
 

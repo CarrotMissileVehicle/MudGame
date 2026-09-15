@@ -14,7 +14,7 @@ void GameCommands::register_mining(Connector& connector, GameContext& ctx, World
 {
     // TUI 环境下以 MiningHandler 会话 + 后台时间线程 (tick_world) 非阻塞推进：
     // "开始采矿" 仅建立会话并提示，产出由后台逐游戏分钟结算，输入 q 或 mine.stop 结束。
-    connector.bind("mine.start", [&](const mud::cmd::Command& cmd, const HandlerContext&) {
+    connector.bind("mine.start", [ctx, world](const mud::cmd::Command& cmd, const HandlerContext&) {
         if (ctx.player.GetPosition() != AtMine) {
             ctx.msg("你不在矿区。");
             return HandlerResult::Failed;
@@ -39,7 +39,7 @@ void GameCommands::register_mining(Connector& connector, GameContext& ctx, World
         return HandlerResult::Ok;
     });
 
-    connector.bind("mine.stop", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("mine.stop", [ctx, world](const mud::cmd::Command&, const HandlerContext&) {
         if (!ctx.mining.is_mining()) {
             ctx.msg("当前并未在采矿。");
             return HandlerResult::Failed;
@@ -51,7 +51,7 @@ void GameCommands::register_mining(Connector& connector, GameContext& ctx, World
         return HandlerResult::Ok;
     });
 
-    connector.bind("mine.status", [&](const mud::cmd::Command&, const HandlerContext&) {
+    connector.bind("mine.status", [ctx](const mud::cmd::Command&, const HandlerContext&) {
         ctx.view.render_mining_status(ctx.make_mining_view());
         return HandlerResult::Ok;
     });

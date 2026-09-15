@@ -29,6 +29,8 @@ namespace mud::tui
         // ---- 日志 ----
         std::deque<std::string> logs;
         std::size_t maxLogs = 2000;
+        std::size_t totalLogsAppended = 0; // 累计追加条数（单调递增，裁剪不影响）
+        std::size_t logsEvicted = 0;       // 累计裁剪条数（队首出队数）
 
         // ---- 问题提示行（输入框上方）----
         std::string question;
@@ -51,8 +53,12 @@ namespace mud::tui
         void push_log(std::string line)
         {
             logs.push_back(std::move(line));
+            ++totalLogsAppended;
             while (logs.size() > maxLogs)
+            {
                 logs.pop_front();
+                ++logsEvicted;
+            }
         }
     };
 } // namespace mud::tui

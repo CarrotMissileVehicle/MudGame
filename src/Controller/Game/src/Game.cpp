@@ -28,7 +28,8 @@ namespace {
 
 Game::Game()
     : saveOpenTime(system_clock::now()),
-      sessionStartTime(system_clock::now()),
+      sessionStartWall(system_clock::now()),
+      sessionStartTime(steady_clock::now()),
       totalPlayTime(0),
       sessionActive(false) {
 }
@@ -37,7 +38,8 @@ void Game::startSession() {
     if (sessionActive) {
         return;
     }
-    sessionStartTime = system_clock::now();
+    sessionStartWall = system_clock::now();
+    sessionStartTime = steady_clock::now();
     sessionActive = true;
 }
 
@@ -45,7 +47,8 @@ void Game::endSession() {
     if (!sessionActive) {
         return;
     }
-    auto elapsed = duration_cast<seconds>(system_clock::now() - sessionStartTime);
+    // 用单调时钟测量时长：NTP 校正或手动改时钟不会产生负值/跳变
+    auto elapsed = duration_cast<milliseconds>(steady_clock::now() - sessionStartTime);
     totalPlayTime += elapsed;
     sessionActive = false;
 }
@@ -55,15 +58,15 @@ mud::time::GameDateTime Game::getSaveOpenTime() const {
 }
 
 mud::time::GameDateTime Game::getSessionStartTime() const {
-    return ToTimePoint(sessionStartTime);
+    return ToTimePoint(sessionStartWall);
 }
 
 std::chrono::seconds Game::getTotalPlayTime() const {
     auto total = totalPlayTime;
     if (sessionActive) {
-        total += duration_cast<seconds>(system_clock::now() - sessionStartTime);
+        total += duration_cast<milliseconds>(steady_clock::now() - sessionStartTime);
     }
-    return total;
+    return duration_cast<seconds>(total);
 }
 
 void Game::setSaveOpenTime(system_clock::time_point time) {
@@ -71,5 +74,15 @@ void Game::setSaveOpenTime(system_clock::time_point time) {
 }
 
 void Game::setTotalPlayTime(seconds total) {
-    totalPlayTime = total;
+    if (sessionActive) {
+        // 会话进行中：传入值视为「会话前累计基数」，扣除当前会话已流逝时长，
+        // 避免 getTotalPlayTime() 在基数之上重复叠加当前会话时间。
+        const auto elapsed =
+            duration_cast<seconds>(steady_clock::now() - sessionStartTime);
+        totalPlayTime = duration_cast<milliseconds>(total - elapsed);
+        if (totalPlayTime < milliseconds::zero())
+            totalPlayTime = milliseconds::zero();
+    } else {
+        totalPlayTime = duration_cast<milliseconds>(total);
+    }
 }

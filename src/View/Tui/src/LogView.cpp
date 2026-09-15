@@ -82,10 +82,19 @@ namespace mud::tui
 
     ftxui::Element LogView::OnRender()
     {
-        // 日志条数或视口尺寸变化时，保证滚动偏移仍在合法范围内
-        const bool logs_changed = state_.logs.size() != seen_logs_;
+        // 以单调递增的累计追加计数检测新日志：达到 maxLogs 上限后 size() 恒定，
+        // 原基于条数的比较会在 2000 行后永久失效，导致自动跟随停止。
+        const bool logs_changed = state_.totalLogsAppended != seen_appended_;
         if (logs_changed)
-            seen_logs_ = state_.logs.size();
+            seen_appended_ = state_.totalLogsAppended;
+
+        // 队首被裁剪时内容整体上移，同步补偿滚动偏移，避免历史视图跳变/错位。
+        const std::size_t evicted = state_.logsEvicted - seen_evicted_;
+        if (evicted > 0)
+        {
+            seen_evicted_ = state_.logsEvicted;
+            scroll_ = std::max(0, scroll_ - static_cast<int>(evicted));
+        }
         scroll_ = std::clamp(scroll_, 0, max_scroll());
 
         // 检测新日志到达：跟随模式下自动滚到最下方

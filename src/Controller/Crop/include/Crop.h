@@ -19,9 +19,6 @@ public:
     bool isUnlocked() const;
     void unlock();
 
-    virtual void grow() = 0;
-    virtual void harvest() = 0;
-
 private:
     int growthCycle;            //生长周期
     int yield;                  //收获数量

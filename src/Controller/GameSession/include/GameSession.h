@@ -57,6 +57,13 @@ public:
     GameSession();
     ~GameSession();
 
+    // 组合根持有相互引用的子系统成员（seeds_→cabbage_…、move_{&player_} 等），
+    // 拷贝/移动会使成员引用别名悬垂，禁止一切复制与搬移。
+    GameSession(const GameSession&) = delete;
+    GameSession& operator=(const GameSession&) = delete;
+    GameSession(GameSession&&) = delete;
+    GameSession& operator=(GameSession&&) = delete;
+
     GameContext& context() { return context_; }
     mud::tui::TuiState& tui_state() { return tuiState_; }
     mud::view::TerminalView& terminal() { return terminal_; }
