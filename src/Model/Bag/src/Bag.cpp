@@ -5,63 +5,49 @@
 #include "../include/Bag.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
-Bag::~Bag() {
-    for (auto obj : objects) {
-        delete obj;
-    }
-    objects.clear();
-}
+Bag::~Bag() = default;   // unique_ptr 自动释放（H14）
 
 // 深拷贝：为每件物品分配新对象，副本与原包互不影响
 Bag::Bag(const Bag& other)
 {
-    for (const auto obj : other.objects)
-        objects.push_back(new Object(*obj));
+    objects.reserve(other.objects.size());
+    for (const auto& obj : other.objects)
+        objects.push_back(std::make_unique<Object>(*obj));
 }
 
+// copy-and-swap：构造副本失败时（分配抛出）this 保持不变，异常安全（H15）
 Bag& Bag::operator=(const Bag& other)
 {
     if (this == &other) return *this;
-    for (auto obj : objects) delete obj;
-    objects.clear();
-    for (const auto obj : other.objects)
-        objects.push_back(new Object(*obj));
+    Bag tmp(other);
+    objects.swap(tmp.objects);
     return *this;
 }
 
-Bag::Bag(Bag&& other) noexcept
-    : objects(std::move(other.objects))
-{
-    other.objects.clear();
-}
+Bag::Bag(Bag&& other) noexcept = default;
 
-Bag& Bag::operator=(Bag&& other) noexcept
-{
-    if (this == &other) return *this;
-    for (auto obj : objects) delete obj;
-    objects = std::move(other.objects);
-    other.objects.clear();
-    return *this;
-}
+Bag& Bag::operator=(Bag&& other) noexcept = default;
 
 void Bag::AddObject(Object* obj) {
     if (obj == nullptr) return;
+    // 立即接管所有权：后续任何抛出路径都由 unique_ptr 释放，不再泄漏（H14）
+    std::unique_ptr<Object> holder(obj);
     // 堆叠逻辑：与已有同名物品合并数量，释放传入对象
-    for (auto* existing : objects) {
-        if (existing->GetName() == obj->GetName()) {
-            existing->AddQuantity(obj->GetQuantity());
-            delete obj;
+    for (auto& existing : objects) {
+        if (existing->GetName() == holder->GetName()) {
+            existing->AddQuantity(holder->GetQuantity());
             return;
         }
     }
-    objects.push_back(obj);
+    objects.push_back(std::move(holder));
 }
 
 void Bag::AddUnique(Object* obj) {
     if (obj != nullptr) {
-        objects.push_back(obj);
+        objects.push_back(std::unique_ptr<Object>(obj));
     }
 }
 
@@ -70,24 +56,28 @@ int Bag::RemoveObject(const std::string& name, int count) {
     if (count <= 0) {
         return 0;
     }
-    for (auto it = objects.begin(); it != objects.end(); ++it) {
-        if ((*it)->GetName() != name) continue;
-        Object* obj = *it;
-        const int have = obj->GetQuantity();
-        const int take = std::min(count, have);
-        if (take >= have) {
-            delete obj;
-            objects.erase(it);
-        } else {
-            obj->AddQuantity(-take);
+    // 跨堆叠累计扣减（H9）：同名多堆叠（读档 AddUnique 还原）时依次扣减直到凑足 count
+    int removed = 0;
+    for (auto it = objects.begin(); it != objects.end() && removed < count; ) {
+        if ((*it)->GetName() != name) {
+            ++it;
+            continue;
         }
-        return take;
+        const int have = (*it)->GetQuantity();
+        const int take = std::min(count - removed, have);
+        if (take >= have) {
+            it = objects.erase(it);
+        } else {
+            (*it)->AddQuantity(-take);
+            ++it;
+        }
+        removed += take;
     }
-    return 0;
+    return removed;
 }
 
 bool Bag::HasObject(const std::string& name) const {
-    for (const auto obj : objects) {
+    for (const auto& obj : objects) {
         if (obj->GetName() == name) {
             return true;
         }
@@ -97,7 +87,7 @@ bool Bag::HasObject(const std::string& name) const {
 
 int Bag::CountObject(const std::string& name) const {
     int total = 0;
-    for (const auto obj : objects) {
+    for (const auto& obj : objects) {
         if (obj->GetName() == name) {
             total += obj->GetQuantity();
         }
@@ -111,7 +101,7 @@ size_t Bag::GetSize() const {
 
 const std::vector<std::string> Bag::GetAllObjectName() const {
     std::vector<std::string> names;
-    for (const auto obj : objects) {
+    for (const auto& obj : objects) {
         names.push_back(obj->GetName());
     }
     return names;
@@ -119,7 +109,7 @@ const std::vector<std::string> Bag::GetAllObjectName() const {
 
 const std::vector<std::string> Bag::GetStackedNames() const {
     std::vector<std::string> names;
-    for (const auto obj : objects) {
+    for (const auto& obj : objects) {
         if (obj->GetQuantity() > 1) {
             names.push_back(obj->GetName() + " x" + std::to_string(obj->GetQuantity()));
         } else {
@@ -131,7 +121,7 @@ const std::vector<std::string> Bag::GetStackedNames() const {
 
 const std::vector<std::string> Bag::GetDescription() const {
     std::vector<std::string> descriptions;
-    for (const auto obj : objects) {
+    for (const auto& obj : objects) {
         std::string d = obj->GetDescription();
         if (obj->GetQuantity() > 1) {
             d += " x" + std::to_string(obj->GetQuantity());
@@ -140,4 +130,3 @@ const std::vector<std::string> Bag::GetDescription() const {
     }
     return descriptions;
 }
-

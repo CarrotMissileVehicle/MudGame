@@ -40,11 +40,17 @@ void GameCommands::register_misc(Connector& connector, GameContext& ctx, WorldEn
     });
 
     const auto bind_move = [&](const std::string& verb, bool (Move::*fn)()) {
-        // 按值捕获 ctx/fn：不持有 register_misc 返回后失效的本地闭包（bind_move 本身）
-        connector.bind(verb, [ctx, fn](const mud::cmd::Command&, const HandlerContext&) {
+        // 按值捕获 ctx/fn、引用捕获 world（引擎生命周期覆盖全部 handler）：
+        // 不持有 register_misc 返回后失效的本地闭包（bind_move 本身）
+        connector.bind(verb, [ctx, fn, &world](const mud::cmd::Command&, const HandlerContext&) {
             if (!ctx.weather.can_go_outside()) {
                 ctx.msg(ctx.weather.weather_name() + "天不宜外出。");
                 return HandlerResult::Failed;
+            }
+            // H8：移动前终止进行中的钓鱼动作，避免状态不一致（离开海边后仍结算）
+            if (ctx.tui.action_type == mud::tui::ActionType::Fish) {
+                ctx.msg("移动时终止钓鱼。");
+                world.end_fishing(true);
             }
             ctx.player.SetState(StateCode::Moving);
             if ((ctx.move.*fn)()) {

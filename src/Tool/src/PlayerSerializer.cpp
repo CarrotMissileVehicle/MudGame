@@ -62,10 +62,10 @@ bool PlayerSerializer::Save(const std::string& filename, const Player& player, c
     file << "toolPickDurability=" << tools.durability(mud::tool::ToolId::Pickaxe) << "\n";
 
     const auto& bag = player.GetBag();
-    const auto* objectsPtr = &bag.GetObjects();
-    file << "bagCount=" << objectsPtr->size() << "\n";
+    const auto& objects = bag.GetObjects();
+    file << "bagCount=" << objects.size() << "\n";
 
-    for (const auto* obj : *objectsPtr) {
+    for (const auto& obj : objects) {
         file << "item=" << obj->GetName() << "|"
              << obj->GetDescription() << "|"
              << obj->GetHealth() << "|"

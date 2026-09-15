@@ -38,9 +38,17 @@ Layer::Layer()
         ml.mining_level = static_cast<std::size_t>(l.at("mining_level").as_int());
 
         const std::string lighting(l.at("lighting").as_string());
-        ml.lighting = (lighting == "none")  ? LightingType::None
-                    : (lighting == "torch") ? LightingType::Torch
-                                            : LightingType::Lantern;
+        // H12：显式枚举合法光照类型，未知值直接报错而非静默映射为 Lantern，
+        // 避免配置笔误被掩盖成错误的游戏行为
+        if (lighting == "none") {
+            ml.lighting = LightingType::None;
+        } else if (lighting == "torch") {
+            ml.lighting = LightingType::Torch;
+        } else if (lighting == "lantern") {
+            ml.lighting = LightingType::Lantern;
+        } else {
+            throw std::invalid_argument("无效的光照类型: " + lighting + "（layer: " + id + "）");
+        }
 
         layers_.emplace(id, std::move(ml));
     }

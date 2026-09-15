@@ -1,5 +1,7 @@
 #include "../include/MarketController.h"
 
+#include <memory>
+
 namespace
 {
 
@@ -70,11 +72,13 @@ MarketController::buy(const std::string& shop_id, const std::string& item_ref,
         return result;
     }
 
-    // 入包等量拷贝
-    for (int i = 0; i < count; ++i)
-        bag_.AddObject(new Object(item->GetName(), item->GetDescription(),
-                                  item->GetHealth(), item->GetSellingPrice(),
-                                  item->GetBuyingPrice()));
+    // 入包等量拷贝（H10：商品实际交付入包，同名自动合并为同一堆叠，
+    // 数量与逐件入包一致；unique_ptr 持有至 AddObject 接管，异常安全）
+    auto obj = std::make_unique<Object>(item->GetName(), item->GetDescription(),
+                                        item->GetHealth(), item->GetSellingPrice(),
+                                        item->GetBuyingPrice());
+    obj->SetQuantity(count);
+    bag_.AddObject(obj.release());
 
     result.status = BuyResult::Status::Ok;
     result.item_name = item->GetName();
@@ -129,11 +133,11 @@ MarketController::sell(const std::string& item_ref, int count, long long& gold)
     }
 
     Object* item = nullptr;
-    for (auto* obj : bag_.GetObjects())
+    for (const auto& obj : bag_.GetObjects())
     {
         if (obj->GetName() == item_name)
         {
-            item = obj;
+            item = obj.get();
             break;
         }
     }
@@ -152,10 +156,23 @@ MarketController::sell(const std::string& item_ref, int count, long long& gold)
         return result;
     }
 
-    bag_.RemoveObject(item_name, sell_count);
+    // H9/H11：按实际移除量入账。同名多堆叠（读档 AddUnique 还原）时
+    // RemoveObject 跨堆叠累计扣减，实扣不足则回退多记的金币，杜绝刷钱漏洞
+    const int removed = bag_.RemoveObject(item_name, sell_count);
+    if (removed != sell_count)
+    {
+        const long long unit = gained / sell_count;   // 单价（截断后整数）
+        const long long refund = unit * (sell_count - removed);
+        gold -= refund;
+        result.sold = removed;
+        result.gained = gained - refund;
+    }
+    else
+    {
+        result.sold = sell_count;
+        result.gained = gained;
+    }
     result.status = SellResult::Status::Ok;
     result.item_name = item_name;
-    result.sold = sell_count;
-    result.gained = gained;
     return result;
 }

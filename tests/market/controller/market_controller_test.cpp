@@ -148,6 +148,23 @@ TEST(MarketControllerBuy, LargeAmountUses64BitTotal)
     EXPECT_EQ(gold, 1000000000LL);
 }
 
+// H10：购买的商品必须实际入包，且同名自动合并为单一堆叠
+TEST(MarketControllerBuy, MultipleCopiesMergeIntoSingleStack)
+{
+    TradeFixture f;
+    long long gold = 200;
+    MarketController ctl(f.market, f.bag);
+
+    const auto r = ctl.buy("smith", "锄头", 3, gold);
+
+    EXPECT_EQ(r.status, MarketController::BuyResult::Status::Ok);
+    EXPECT_EQ(r.bought, 3);
+    EXPECT_EQ(f.bag.CountObject("锄头"), 3);   // 商品已交付
+    EXPECT_EQ(f.bag.GetSize(), 1u);            // 单堆叠
+    ASSERT_EQ(f.bag.GetStackedNames().size(), 1u);
+    EXPECT_EQ(f.bag.GetStackedNames()[0], "锄头 x3");
+}
+
 // ---- sell ----
 
 TEST(MarketControllerSell, SuccessAddsGoldAndRemoves)
@@ -249,4 +266,24 @@ TEST(MarketControllerSell, ZeroCountRejected)
     EXPECT_EQ(r.status, MarketController::SellResult::Status::NoSuchItem);
     EXPECT_EQ(gold, 0);
     EXPECT_EQ(f.bag.CountObject("胡萝卜"), 1);   // 物品不动
+}
+
+// H9/H11：同名多堆叠（读档 AddUnique 还原）出售必须跨堆叠实扣全部数量，
+// 金币只按实际移除量入账，杜绝“卖 2 个只扣 1 个”的刷钱漏洞
+TEST(MarketControllerSell, MultiStackRemovalCreditsExactly)
+{
+    TradeFixture f;
+    f.bag.AddUnique(new Object("胡萝卜", "蔬菜", 0, 10, 5));  // 堆叠1: x1
+    f.bag.AddUnique(new Object("胡萝卜", "蔬菜", 0, 10, 5));  // 堆叠2: x1
+    long long gold = 0;
+    MarketController ctl(f.market, f.bag);
+
+    const auto r = ctl.sell("胡萝卜", 2, gold);
+
+    EXPECT_EQ(r.status, MarketController::SellResult::Status::Ok);
+    EXPECT_EQ(r.sold, 2);
+    EXPECT_EQ(r.gained, 20);                     // 10 x 2
+    EXPECT_EQ(gold, 20);
+    EXPECT_EQ(f.bag.CountObject("胡萝卜"), 0);   // 两个堆叠都被清掉
+    EXPECT_EQ(f.bag.GetSize(), 0u);
 }

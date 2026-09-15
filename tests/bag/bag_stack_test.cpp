@@ -135,3 +135,35 @@ TEST(BagStackTest, RemoveObjectRejectsNonPositiveCount)
     EXPECT_EQ(bag.RemoveObject("不存在", -1), 0);
     EXPECT_EQ(bag.GetSize(), 1u);
 }
+
+// H9：同名多堆叠（读档 AddUnique 还原场景）时 RemoveObject 必须跨堆叠累计扣减，
+// 否则出售按 CountObject 入账、只扣首个堆叠，形成刷钱漏洞
+TEST(BagStackTest, RemoveObjectSpansMultipleStacks)
+{
+    Bag bag;
+    bag.AddUnique(new Object("小麦", "农作物", 0, 5, 3)); // 堆叠1: x1
+    bag.AddUnique(new Object("小麦", "农作物", 0, 5, 3)); // 堆叠2: x1
+    bag.AddUnique(new Object("小麦", "农作物", 0, 5, 3)); // 堆叠3: x1
+    ASSERT_EQ(bag.GetSize(), 3u);
+    ASSERT_EQ(bag.CountObject("小麦"), 3);
+
+    // 一次扣 2：应跨堆叠清空两个堆叠
+    EXPECT_EQ(bag.RemoveObject("小麦", 2), 2);
+    EXPECT_EQ(bag.CountObject("小麦"), 1);
+    EXPECT_EQ(bag.GetSize(), 1u);
+    EXPECT_TRUE(bag.HasObject("小麦"));
+
+    // 再扣 5（超过持有量）：清空剩余堆叠，返回实际移除量 1
+    EXPECT_EQ(bag.RemoveObject("小麦", 5), 1);
+    EXPECT_EQ(bag.CountObject("小麦"), 0);
+    EXPECT_EQ(bag.GetSize(), 0u);
+}
+
+TEST(BagStackTest, AddObjectNullGuard)
+{
+    Bag bag;
+    bag.AddObject(nullptr); // 空指针：忽略且不改变状态、不崩溃
+    EXPECT_EQ(bag.GetSize(), 0u);
+    bag.AddUnique(nullptr);
+    EXPECT_EQ(bag.GetSize(), 0u);
+}

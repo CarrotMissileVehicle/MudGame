@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 #include "Model/Map/include/Coast.h"
 #include "Model/Map/include/Farmland.h"
@@ -33,28 +34,46 @@ namespace
 Move::Move(Player& player) : player(player) {
 }
 
+// 该位置未覆盖的导航方向由基类抛 std::logic_error（H13），
+// 捕获后视为“走不通”返回 false，保持玩家体验不崩溃
 bool Move::GoUp() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(std::unique_ptr<Position>(pos->GoUp()));
+    try {
+        return MoveTo(std::unique_ptr<Position>(pos->GoUp()));
+    } catch (const std::logic_error&) {
+        return false;
+    }
 }
 
 bool Move::GoDown() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(std::unique_ptr<Position>(pos->GoDown()));
+    try {
+        return MoveTo(std::unique_ptr<Position>(pos->GoDown()));
+    } catch (const std::logic_error&) {
+        return false;
+    }
 }
 
 bool Move::GoLeft() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(std::unique_ptr<Position>(pos->GoLeft()));
+    try {
+        return MoveTo(std::unique_ptr<Position>(pos->GoLeft()));
+    } catch (const std::logic_error&) {
+        return false;
+    }
 }
 
 bool Move::GoRight() {
     const auto pos = concrete_position(player.GetPosition());
     if (pos == nullptr) return false;
-    return MoveTo(std::unique_ptr<Position>(pos->GoRight()));
+    try {
+        return MoveTo(std::unique_ptr<Position>(pos->GoRight()));
+    } catch (const std::logic_error&) {
+        return false;
+    }
 }
 
 bool Move::MoveTo(std::unique_ptr<Position> newPos) {

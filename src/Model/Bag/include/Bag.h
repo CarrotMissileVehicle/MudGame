@@ -4,6 +4,7 @@
 
 #ifndef MUDGAME_BAG_H
 #define MUDGAME_BAG_H
+#include <memory>
 #include <string>
 #include <vector>
 #include "Object.h"
@@ -19,11 +20,12 @@ public:
     Bag(Bag&& other) noexcept;
     Bag& operator=(Bag&& other) noexcept;
 
-    // 入包时同名物品自动堆叠合并（数量累加到已存在的堆叠上）
+    // 入包时同名物品自动堆叠合并（数量累加到已存在的堆叠上）。
+    // 传入对象的所有权转移给 Bag（合并时释放，存入时由 Bag 管理）。
     void AddObject(Object* obj);
-    // 不做堆叠合并直接入包：读档还原已聚合堆叠时使用
+    // 不做堆叠合并直接入包：读档还原已聚合堆叠时使用（同样转移所有权）
     void AddUnique(Object* obj);
-    // 从同名堆叠扣减 count 个；数量归零则删除该堆叠；返回实际移除数量
+    // 从同名堆叠扣减 count 个；跨堆叠累计扣减（H9），数量归零则删除该堆叠；返回实际移除数量
     int RemoveObject(const std::string& name, int count = 1);
     [[nodiscard]] bool HasObject(const std::string& name) const;
     // 同名称物品的总数量（按堆叠累加）
@@ -38,8 +40,8 @@ public:
 
     template<typename T>
     T *TryGetObjByType() {
-        for (const auto obj: objects) {
-            auto temp = dynamic_cast<T *>(obj);
+        for (const auto& obj: objects) {
+            auto temp = dynamic_cast<T *>(obj.get());
             if (temp != nullptr)
                 return temp;
         }
@@ -49,18 +51,19 @@ public:
     template<typename T>
     std::vector<T *> TryGetAllObjByType() {
         std::vector<T *> temp;
-        for (const auto obj: objects) {
-            auto tempObj = dynamic_cast<T *>(obj);
+        for (const auto& obj: objects) {
+            auto tempObj = dynamic_cast<T *>(obj.get());
             if (tempObj != nullptr)
                 temp.push_back(tempObj);
         }
         return temp;
     }
 
-    const std::vector<Object*>& GetObjects() const { return objects; }
+    // 只读访问：元素为 unique_ptr，所有权仍归 Bag
+    const std::vector<std::unique_ptr<Object>>& GetObjects() const { return objects; }
 
 private:
-    std::vector<Object *> objects;
+    std::vector<std::unique_ptr<Object>> objects;
 };
 
 
