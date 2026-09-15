@@ -32,7 +32,9 @@ public:
     void tick_world();
     /// 1 秒后台节拍：非阻塞动作推进（当前仅钓鱼轮次）
     void handle_action_tick();
-    /// 结束当前钓鱼动作（manual=true 表示手动退出）
+    /// 结束当前钓鱼动作（manual=true 表示手动退出）。
+    /// @pre 仅当存在进行中的钓鱼动作（tui.action_type == Fish）时有效；
+    ///      方法本身幂等——无动作时调用直接返回，不触碰玩家状态、不输出误导反馈。
     void end_fishing(bool manual);
 
     /// 由玩家采矿经验与矿镐等级推导采矿上下文

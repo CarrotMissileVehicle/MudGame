@@ -28,7 +28,7 @@ TEST(ViewPanelTest, StatusPanelRendersPlayerFields)
 {
     StringRenderer r;
     StatusPanel panel(r);
-    PlayerStatus s;
+    PlayerStatus s{};
     s.position = AtFarmland;
     s.state = Waiting;
     s.satiety = 70;
@@ -242,7 +242,7 @@ TEST(ViewPanelTest, TerminalViewPrintsWeatherOnce)
 {
     StringRenderer r;
     TerminalView tv(r);
-    GameSnapshot snap;
+    GameSnapshot snap{};  // zero-initialize all DTO scalars
     snap.time.year = 0; snap.time.month = 1; snap.time.day = 1;
     snap.time.hour = 8; snap.time.minute = 0;
     snap.weather.weather = "晴天";

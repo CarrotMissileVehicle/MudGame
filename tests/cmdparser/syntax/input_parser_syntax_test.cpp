@@ -30,6 +30,7 @@ TEST(InputParserSyntax, FullCommandParses)
     InputParser p;
     const Command c = p.parse("mine.start --layer 2");
     EXPECT_EQ(c.verb, "mine.start");
+    ASSERT_EQ(c.options.count("layer"), 1) << "option 'layer' missing";
     EXPECT_EQ(c.options.at("layer"), "2");
     EXPECT_TRUE(c.args.empty());
     EXPECT_EQ(c.raw, "mine.start --layer 2");
@@ -47,6 +48,7 @@ TEST(InputParserSyntax, LeadingTrailingWhitespace)
     InputParser p;
     const Command c = p.parse("  mine.start --layer 1  ");
     EXPECT_EQ(c.verb, "mine.start");
+    ASSERT_EQ(c.options.count("layer"), 1) << "option 'layer' missing";
     EXPECT_EQ(c.options.at("layer"), "1");
 }
 
@@ -56,6 +58,7 @@ TEST(InputParserSyntax, ConsecutiveWhitespace)
     InputParser p;
     const Command c = p.parse("mine.start     --layer    2");
     EXPECT_EQ(c.verb, "mine.start");
+    ASSERT_EQ(c.options.count("layer"), 1) << "option 'layer' missing";
     EXPECT_EQ(c.options.at("layer"), "2");
 }
 

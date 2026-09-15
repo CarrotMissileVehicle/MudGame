@@ -51,8 +51,11 @@ void WorldEngine::grant_mining(const std::vector<mining::MiningResult>& results,
 }
 
 // 结束当前钓鱼动作：复位玩家状态并清空 TUI 动作状态。
+// 幂等：无进行中的钓鱼动作（如重复调用/误调用）直接返回，不触碰玩家状态。
 void WorldEngine::end_fishing(bool manual)
 {
+    if (ctx_.tui.action_type != mud::tui::ActionType::Fish)
+        return;
     ctx_.player.SetState(StateCode::Waiting);
     if (manual)
         ctx_.msg("钓鱼结束（手动退出），共钓到 " + std::to_string(ctx_.tui.action_cycles) + " 条鱼。");

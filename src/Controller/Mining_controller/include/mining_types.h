@@ -46,7 +46,10 @@ namespace mud::mining
     struct MiningTool // 等工具部分完善
     {
         MiningSpeed mining_speed = MiningSpeed::Core; // 工具速度档位（默认核心镐）
-        time::gameMinutes interval{static_cast<std::int64_t>(mining_speed)}; // 单次采矿间隔（游戏分钟）
+        // 速度→间隔反相关映射（15 - 档位值）：档位越大间隔越短，与 MiningSpeed
+        // “数值越大越快”的语义一致；消费侧 calculate_production_count 用
+        // elapsed / interval 计算产出次数，直接赋档位值会让最快的铁镐间隔最长。
+        time::gameMinutes interval{15 - static_cast<std::int64_t>(mining_speed)};
         double rare_bonus = 0.0;    // 稀有矿产加成
     };
 

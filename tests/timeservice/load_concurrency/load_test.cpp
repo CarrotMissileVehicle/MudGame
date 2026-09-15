@@ -20,6 +20,15 @@ GameDateTime dt(int y, unsigned m, unsigned d, unsigned h = 0, unsigned min = 0)
     return GameDateTime{y, m, d, h, min};
 }
 
+// 从纪元起推进 m 分钟：GameDateTime 聚合字段 minute 限定 0-59，
+// 直接传 m(1..2000) 会构造非法时刻，必须经 advance() 归一化。
+GameDateTime add_minutes(int m)
+{
+    GameDateTime t{0, 1, 1, 0, 0};
+    t.advance(m);
+    return t;
+}
+
 void push(mud::TimeService& svc, std::int64_t frames)
 {
     for (std::int64_t i = 0; i < frames; ++i) svc.update();
@@ -88,9 +97,9 @@ TEST(Load, StableOrderUnderManyDue) // TS-LC-002b 大批量到期顺序稳定
     constexpr int N = 2000;
     std::vector<int> seq;
     seq.reserve(N);
-    // 递增 due，注册打乱顺序
+    // 递增 due（归一化时刻），注册打乱顺序
     for (int i = N; i >= 1; --i)
-        svc.schedule_time(dt(0, 1, 1, 0, i), [&, i] { seq.push_back(i); });
+        svc.schedule_time(add_minutes(i), [&, i] { seq.push_back(i); });
     push(svc, N);
     ASSERT_EQ(seq.size(), std::size_t(N));
     for (int i = 0; i < N; ++i) EXPECT_EQ(seq[i], i + 1); // 按 due 升序

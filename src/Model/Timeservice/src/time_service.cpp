@@ -29,6 +29,9 @@ std::int64_t mud::TimeService::session_total() const
 // 并触发落入（推进前时刻, 推进后时刻] 窗口内的到期回调。
 void mud::TimeService::update()
 {
+    // 重入防护：回调内再调用 update() 直接拒绝，避免递归推进/双重派发
+    if (dispatching_)
+        return;
     sub_minute_ += time_scale_;
     const int whole = static_cast<int>(std::floor(sub_minute_ / 60.0));
     sub_minute_ -= whole * 60.0;
@@ -68,13 +71,26 @@ void mud::TimeService::update()
     }
 
     // 同一帧内跨多个时刻：按 due 升序（同刻按 token）顺序触发。
+    // 回调异常逐条隔离：单个回调抛异常不影响其余到期回调与后续帧（now_ 已推进）。
     std::sort(due.begin(), due.end(),
               [](const Due& a, const Due& b)
               {
                   if (a.due != b.due) return a.due < b.due;
                   return a.token < b.token;
               });
-    for (const auto& d : due) d.cb();
+    dispatching_ = true;
+    for (const auto& d : due)
+    {
+        try
+        {
+            d.cb();
+        }
+        catch (...)
+        {
+            // 异常策略：回调必须不抛异常；一旦抛出按“该回调视为失败”继续派发其余回调
+        }
+    }
+    dispatching_ = false;
 }
 
 // 直接跳进指定分钟数（世界推进用）：清空亚分钟余数，不触发定时回调
@@ -107,6 +123,9 @@ double mud::TimeService::time_scale() const { return time_scale_; }
 // 注册一次性定时回调
 std::size_t mud::TimeService::schedule_time(time::GameDateTime due, Callback callback)
 {
+    // 拒绝空回调：触发期调用空 std::function 会抛 bad_function_call
+    if (!callback)
+        throw std::invalid_argument("schedule_time: callback 不能为空");
     const auto token = next_token_++;
     schedule_.push_back(Entry{token, due, 0, std::move(callback)});
     return token;
@@ -118,6 +137,9 @@ std::size_t mud::TimeService::schedule_interval(std::int64_t minutes, Callback c
     // 拒绝非正周期：minutes<=0 时 due 不晚于当前时刻，条目永不触发且永不释放
     if (minutes <= 0)
         throw std::invalid_argument("schedule_interval: minutes 必须 > 0");
+    // 拒绝空回调：触发期调用空 std::function 会抛 bad_function_call
+    if (!callback)
+        throw std::invalid_argument("schedule_interval: callback 不能为空");
     const auto token = next_token_++;
     auto due = now_;
     due.advance(minutes);

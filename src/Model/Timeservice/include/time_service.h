@@ -48,15 +48,18 @@ namespace mud
         /** @brief 返回当前时间流速倍率。 */
         [[nodiscard]] double time_scale() const;
 
-        /** @brief 注册一次性定时回调：到达 due 时刻触发后移除。返回退订令牌。 */
+        /** @brief 注册一次性定时回调：到达 due 时刻触发后移除。返回退订令牌。
+         *  @pre callback 非空；空回调抛 std::invalid_argument（否则触发期抛 bad_function_call）。 */
         std::size_t schedule_time(time::GameDateTime due, Callback callback);
 
         /** @brief 注册周期定时回调：每 minutes 分钟触发一次并自动重排。
          *  @pre minutes > 0；minutes <= 0 时拒绝注册（抛 std::invalid_argument），
-         *       否则会注册出 due 不晚于当前时刻的条目，该条目永不触发且永不释放。 */
+         *       否则会注册出 due 不晚于当前时刻的条目，该条目永不触发且永不释放。
+         *  @pre callback 非空；空回调抛 std::invalid_argument。 */
         std::size_t schedule_interval(std::int64_t minutes, Callback callback);
 
-        /** @brief 退订指定令牌对应的定时回调。 */
+        /** @brief 退订指定令牌对应的定时回调。
+         *  @note 派发回调内调用 cancel() 只能撤销尚未触发（未进入本次 due 快照）的条目。 */
         void cancel(std::size_t token);
 
     private:
@@ -74,5 +77,6 @@ namespace mud
         double sub_minute_{0.0};     // 亚分钟余数（游戏秒，[0,60)）
         std::vector<Entry> schedule_; // 定时回调函数数组
         std::size_t next_token_{1};   // 下一个分配令牌
+        bool dispatching_{false};    // 派发进行中：拒绝嵌套 update() 重入
     };
 }

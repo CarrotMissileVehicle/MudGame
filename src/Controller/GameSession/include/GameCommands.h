@@ -13,7 +13,13 @@ class GameContext;
 class WorldEngine;
 
 /**
- * @brief 命令注册表：main 装配阶段调用 register_all 一次性注册全部指令。
+ * @brief 命令注册表：集中式注册全部指令（迁移目标）。
+ *
+ * @note 当前状态（2026-09）：本门面尚无调用点——src/Controller/GameSession/
+ *       尚未编入 MudGame 可执行目标，main.cpp 仍以内联方式逐一 bind 指令并
+ *       重复注册 Schema（main.cpp 约 509-1086 行）。两处动词/Schema 表互为
+ *       镜像，修改时必须同步；完成 GameSession 装配迁移后应删除 main.cpp
+ *       的内联注册、改调 register_all，恢复单一事实来源。
  */
 class GameCommands
 {

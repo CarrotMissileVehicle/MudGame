@@ -48,8 +48,10 @@ void WeatherController::update()
         }
     }
 
-    // 2) 早 8 点触发当天随机事件（同日只触发一次）
-    if (day_index != last_event_day_ && hour == 8) {
+    // 2) 早 8 点后触发当天随机事件（同日只触发一次）：
+    //    hour >= 8 而非 == 8：帧推进可能跨过整点，或开局即晚于 8 点，
+    //    否则当天的 8 点事件会被整日跳过且 last_event_day_ 不推进。
+    if (day_index != last_event_day_ && hour >= 8) {
         last_event_day_ = day_index;
         const bool neglect_water = (neglect_days_ >= 3);   // 连续 3 天未浇水
         event_.generate_daily_events(day_of_week(day_index), neglect_water);
