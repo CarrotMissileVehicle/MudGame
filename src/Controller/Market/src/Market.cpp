@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <random>
 
 namespace
@@ -159,6 +160,8 @@ long long Market::sell(Object* item, int count, long long& gold) {
     int price = getSellPrice(item);
     if (price <= 0) return 0;
     const long long total = static_cast<long long>(price) * count;
+    // H25/DEF-110：gold 接近 LLONG_MAX 时拒绝本次交易，避免符号溢出 UB
+    if (gold > std::numeric_limits<long long>::max() - total) return 0;
     gold += total;                    // DEF-007：全程 64 位回写，不再截断
     return total;
 }

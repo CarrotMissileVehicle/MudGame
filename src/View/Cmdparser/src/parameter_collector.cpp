@@ -8,6 +8,7 @@
 #include "Renderer.h"
 
 #include <iostream>
+#include <map>
 #include <string>
 
 ParameterCollector::ParameterCollector(
@@ -29,6 +30,9 @@ ParameterCollector::ParameterCollector(
 bool ParameterCollector::collect(const mud::cmd::CommandSchema& schema,
                                  mud::cmd::Command& cmd)
 {
+    // 先收集到本地，全部成功后再一次性提交：取消/失败时 cmd 保持原状，
+    // 不会留下"部分填充"的中间状态。
+    std::map<std::string, std::string> collected;
     for (const auto& param : schema.parameters)
     {
         // 已由传统解析提供，跳过
@@ -53,7 +57,7 @@ bool ParameterCollector::collect(const mud::cmd::CommandSchema& schema,
                 if (!param.default_value.empty())
                 {
                     // 有默认值，使用默认值
-                    cmd.options[param.name] = param.default_value;
+                    collected[param.name] = param.default_value;
                     break;
                 }
                 if (param.required)
@@ -68,9 +72,11 @@ bool ParameterCollector::collect(const mud::cmd::CommandSchema& schema,
             }
 
             // 有输入，记录并继续下一个参数
-            cmd.options[param.name] = input;
+            collected[param.name] = input;
             break;
         }
     }
+    // 全部参数收集成功，一次性提交到 cmd
+    cmd.options.insert(collected.begin(), collected.end());
     return true;
 }

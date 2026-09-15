@@ -210,6 +210,54 @@ TEST(ViewPanelTest, HelpScreenRendersRawText)
     EXPECT_NE(out.find("quit 退出游戏"), std::string::npos);
 }
 
+// 帮助文本逐行经 print() 输出（不再经 print_raw 丢弃）
+TEST(ViewPanelTest, HelpScreenSplitsLinesIntoPrints)
+{
+    StringRenderer r;
+    HelpScreen panel(r);
+    panel.render("行一\n行二\n行三");
+    EXPECT_EQ(r.text(), "行一\n行二\n行三\n");
+}
+
+TEST(ViewPanelTest, HelpScreenEmptyProducesNoOutput)
+{
+    StringRenderer r;
+    HelpScreen panel(r);
+    panel.render("");
+    EXPECT_EQ(r.text(), "");
+}
+
+// 负宽度/零宽度不得触发天文数字分配
+TEST(ViewPanelTest, PrintSeparatorHandlesNonPositiveWidth)
+{
+    StringRenderer r;
+    print_separator(r, -1);
+    print_separator(r, 0);
+    print_separator(r, 3, '*');
+    EXPECT_EQ(r.text(), "\n\n***\n");
+}
+
+// render_all 的"今日天气"只出现一次（WeatherPanel 统一输出）
+TEST(ViewPanelTest, TerminalViewPrintsWeatherOnce)
+{
+    StringRenderer r;
+    TerminalView tv(r);
+    GameSnapshot snap;
+    snap.time.year = 0; snap.time.month = 1; snap.time.day = 1;
+    snap.time.hour = 8; snap.time.minute = 0;
+    snap.weather.weather = "晴天";
+    snap.player.position = AtTown;
+    snap.player.state = Waiting;
+    snap.mining.is_mining = false;
+    snap.mining.mining_level = 1;
+    snap.fishing.can_fish = true;
+    tv.render_all(snap);
+    const std::string out = r.text();
+    const std::size_t first = out.find("今日天气：晴天");
+    ASSERT_NE(first, std::string::npos);
+    EXPECT_EQ(out.find("今日天气", first + 1), std::string::npos);
+}
+
 TEST(ViewPanelTest, TerminalViewRenderAllComposesPanels)
 {
     StringRenderer r;

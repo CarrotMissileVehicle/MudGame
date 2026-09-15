@@ -4,7 +4,7 @@
 
 #include "../include/PlayerState.h"
 
-PlayerState::PlayerState(int code) : stateCode(Waiting) {
+PlayerState::PlayerState(int code) : stateCode(static_cast<StateCode>(code)) {
 }
 
 PlayerState::PlayerState(StateCode code) : stateCode(code) {

@@ -72,12 +72,18 @@ public:
         const mud::cmd::Command& command,
         const HandlerContext& ctx) const;
 
-    /** @brief 查询指定 verb 是否已有绑定的处理器。 */
+    /** @brief 查询指定 verb 是否已有绑定的处理器（大小写不敏感，与 dispatch 保持一致）。 */
     bool has(std::string_view verb) const;
 
-    /** @brief 查询指定 verb 是否已注册 schema。 */
+    /** @brief 查询指定 verb 是否已注册 schema（大小写不敏感，与 dispatch 保持一致）。 */
     bool has_schema(std::string_view verb) const;
 
-    /** @brief 获取已注册的 schema（用于生成帮助文本）。 */
+    /**
+     * @brief 获取已注册的 schema（用于生成帮助文本）。
+     *
+     * @pre verb 必须已注册（请先经 has_schema() 校验），否则抛 std::out_of_range。
+     * @note 返回的引用指向 schemas_ 内部元素；后续 register_schema() 触发重哈希后
+     *       该引用可能失效，不得跨注册边界长期持有。
+     */
     const mud::cmd::CommandSchema& get_schema(std::string_view verb) const;
 };

@@ -24,6 +24,7 @@
 #include <chrono>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -80,6 +81,9 @@ namespace mud::tui
 
     private:
         TuiState& state_;
+        // app_ 由 run() 在主线程创建，后台线程经 exit()/post_background() 读取，
+        // 用互斥锁发布/读取指针，避免数据竞争（UB）。
+        mutable std::mutex app_mutex_;
         std::unique_ptr<ftxui::App> app_;
 
         std::function<bool(const std::string&)> process_line_;

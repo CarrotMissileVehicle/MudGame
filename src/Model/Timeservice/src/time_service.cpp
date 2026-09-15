@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 // 构造：初始化当前游戏时间
 mud::TimeService::TimeService(time::GameDateTime initial) : now_(initial)
@@ -114,6 +115,9 @@ std::size_t mud::TimeService::schedule_time(time::GameDateTime due, Callback cal
 // 注册周期定时回调：首次到期 = 当前时刻 + minutes 分钟
 std::size_t mud::TimeService::schedule_interval(std::int64_t minutes, Callback callback)
 {
+    // 拒绝非正周期：minutes<=0 时 due 不晚于当前时刻，条目永不触发且永不释放
+    if (minutes <= 0)
+        throw std::invalid_argument("schedule_interval: minutes 必须 > 0");
     const auto token = next_token_++;
     auto due = now_;
     due.advance(minutes);

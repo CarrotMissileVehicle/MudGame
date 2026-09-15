@@ -51,7 +51,9 @@ namespace mud
         /** @brief 注册一次性定时回调：到达 due 时刻触发后移除。返回退订令牌。 */
         std::size_t schedule_time(time::GameDateTime due, Callback callback);
 
-        /** @brief 注册周期定时回调：每 minutes 分钟触发一次并自动重排。 */
+        /** @brief 注册周期定时回调：每 minutes 分钟触发一次并自动重排。
+         *  @pre minutes > 0；minutes <= 0 时拒绝注册（抛 std::invalid_argument），
+         *       否则会注册出 due 不晚于当前时刻的条目，该条目永不触发且永不释放。 */
         std::size_t schedule_interval(std::int64_t minutes, Callback callback);
 
         /** @brief 退订指定令牌对应的定时回调。 */

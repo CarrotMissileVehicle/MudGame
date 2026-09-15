@@ -73,11 +73,13 @@ namespace mud::tui
 
     void GameTui::exit()
     {
+        std::lock_guard<std::mutex> lock(app_mutex_);
         if (app_) app_->Exit();
     }
 
     void GameTui::post_background(std::function<void()> fn)
     {
+        std::lock_guard<std::mutex> lock(app_mutex_);
         if (app_) app_->PostEventOrExecute(std::move(fn));
     }
 
@@ -254,7 +256,11 @@ namespace mud::tui
     void GameTui::run()
     {
         build();
-        app_ = std::make_unique<ftxui::App>(ftxui::App::Fullscreen());
+        {
+            // 发布 app_ 指针；Loop 期间后台线程经 exit()/post_background() 读取
+            std::lock_guard<std::mutex> lock(app_mutex_);
+            app_ = std::make_unique<ftxui::App>(ftxui::App::Fullscreen());
+        }
         app_->Loop(impl_->top);
     }
 } // namespace mud::tui

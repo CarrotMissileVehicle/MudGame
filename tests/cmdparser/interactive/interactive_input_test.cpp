@@ -101,3 +101,24 @@ TEST(ParameterCollector, SkipsPresentOptions)
     EXPECT_EQ(cmd.options["layer"], "3");
     EXPECT_EQ(cmd.options["factor"], "0.5");
 }
+
+// 第二个参数处取消：第一个参数不得残留在 cmd.options 中（一次性提交）
+TEST(ParameterCollector, CancelMidCollectionLeavesCommandUnmodified)
+{
+    mud::cmd::CommandSchema schema;
+    schema.parameters.push_back({"shop", "商店ID", true, ""});
+    schema.parameters.push_back({"item", "物品名", true, ""});
+
+    std::size_t idx = 0;
+    mud::view::StringRenderer r;
+    ParameterCollector collector(r, make_input_fn({"smith", "q"}, idx));
+
+    mud::cmd::Command cmd;
+    cmd.verb = "market.buy";
+    cmd.options["pre_existing"] = "keep";
+
+    EXPECT_FALSE(collector.collect(schema, cmd));
+    EXPECT_EQ(cmd.options.count("shop"), 0u);          // 已输入但未提交
+    EXPECT_EQ(cmd.options.count("item"), 0u);
+    EXPECT_EQ(cmd.options["pre_existing"], "keep");    // 既有内容不受影响
+}

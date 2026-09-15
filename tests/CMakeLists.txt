@@ -15,6 +15,8 @@ FetchContent_MakeAvailable(googletest)
 
 # ---- 按模块聚合各测试目标 ----
 add_subdirectory(bag)
+add_subdirectory(objects)
+add_subdirectory(playerstates)
 add_subdirectory(cmdparser)
 add_subdirectory(farm)
 add_subdirectory(fishing)

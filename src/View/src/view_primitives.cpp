@@ -11,6 +11,12 @@ namespace mud::view
 {
     void print_separator(Renderer& r, int width, char ch)
     {
+        // 负数/零宽度直接输出空行，避免 cast 成 size_t 后分配天文数字内存崩溃
+        if (width <= 0)
+        {
+            r.print("");
+            return;
+        }
         r.print(std::string(static_cast<std::size_t>(width), ch));
     }
 

@@ -26,7 +26,8 @@ mudgame_add_cmdparser_test(cmdparser_context_test
     context/state_gate_test.cpp)
 
 mudgame_add_cmdparser_test(cmdparser_logic_test
-    logic/connector_dispatch_test.cpp)
+    logic/connector_dispatch_test.cpp
+    logic/connector_case_test.cpp)
 
 mudgame_add_cmdparser_test(cmdparser_interactive_test
     interactive/interactive_input_test.cpp)

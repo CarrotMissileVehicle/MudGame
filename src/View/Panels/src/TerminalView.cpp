@@ -22,7 +22,8 @@ namespace mud::view
             r_.print("");
         }
 
-        render_now(snap.time, snap.weather);
+        // 天气由下方 weather_.render() 统一输出，避免与 render_now 的"今日天气"重复
+        time_.render(snap.time);
         status_.render(snap.player);
 
         if (!snap.farm.plots.empty())

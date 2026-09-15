@@ -2,9 +2,19 @@
 // Created by z2996 on 2026/8/25.
 //
 
+#include <limits>
 #include <utility>
 
 #include "../include/Object.h"
+
+namespace
+{
+    // 数量下限统一钳制：堆叠数量最小为 1
+    int clamp_min_one(int value)
+    {
+        return value < 1 ? 1 : value;
+    }
+}
 
 Object::Object(int sellingPrice, int buyingPrice)
         : sellingPrice(sellingPrice), buyingPrice(buyingPrice) {}
@@ -42,13 +52,16 @@ int Object::GetQuantity() const {
 }
 
 void Object::SetQuantity(int value) {
-    quantity = value;
-    if (quantity < 1) quantity = 1;
+    quantity = clamp_min_one(value);
 }
 
 void Object::AddQuantity(int delta) {
-    quantity += delta;
-    if (quantity < 1) quantity = 1;
+    // 正增量做饱和加法，防止接近 INT_MAX 时溢出 UB
+    if (delta > 0 && quantity > std::numeric_limits<int>::max() - delta)
+        quantity = std::numeric_limits<int>::max();
+    else
+        quantity += delta;
+    quantity = clamp_min_one(quantity);
 }
 
 void Object::Broke() {
@@ -57,6 +70,7 @@ void Object::Broke() {
 }
 
 void Object::Repair(int num) {
+    if (num <= 0) return; // 拒绝非正值，避免 health 被反向削减
     health += num;
 }
 

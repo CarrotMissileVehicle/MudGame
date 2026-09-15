@@ -7,6 +7,8 @@
  */
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include "Market.h"
 #include "Shop.h"
 #include "ShopItem.h"
@@ -83,6 +85,15 @@ TEST(MarketTrade, SellZeroPriceAddsNothing) // DEF-106 语义锚点
     long long gold = 5;
     EXPECT_EQ(market.sell(&junk, 2, gold), 0);
     EXPECT_EQ(gold, 5);
+}
+
+TEST(MarketTrade, SellRefusesOverflowingGold) // H25/DEF-110 溢出防护
+{
+    Market market;
+    Object carrot{"胡萝卜", "蔬菜", 0, 10, 5};
+    long long gold = std::numeric_limits<long long>::max();
+    EXPECT_EQ(market.sell(&carrot, 1, gold), 0);   // 再卖必溢出 → 拒绝
+    EXPECT_EQ(gold, std::numeric_limits<long long>::max());
 }
 
 TEST(MarketTrade, ProsperousDayBoostsSellPrice)
