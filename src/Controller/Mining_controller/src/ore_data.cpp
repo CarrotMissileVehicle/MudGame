@@ -12,13 +12,29 @@
 #include <stdexcept>
 #include <string>
 
-// 私有的"find 或抛异常"辅助，避免各查询函数重复守卫。
+#include <filesystem>
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
+// 数据目录定位：优先使用 exe 同级的 Data/（发布包随行数据，跨机分发可读），
+// 找不到时回落编译期注入的 MUDGAME_DATA_DIR（单元测试场景依赖后者）。
 namespace
 {
-    inline const std::string& data_dir()
+    inline std::string data_dir()
     {
-        static const std::string dir = MUDGAME_DATA_DIR;
-        return dir;
+#ifdef _WIN32
+        wchar_t buf[4096];
+        const DWORD len = GetModuleFileNameW(nullptr, buf, 4096);
+        if (len > 0 && len < 4096)
+        {
+            std::filesystem::path exe(buf);
+            const std::filesystem::path rel = exe.parent_path() / "Data";
+            if (std::filesystem::exists(rel / "Ore"))
+                return rel.string();
+        }
+#endif
+        return MUDGAME_DATA_DIR;
     }
 }
 

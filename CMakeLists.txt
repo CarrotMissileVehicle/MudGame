@@ -15,6 +15,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (MSVC)
     add_compile_options(/utf-8)
+    # 静态链接 CRT,发布时不需要额外 DLL
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif (MINGW)
+    # 静态链接 MinGW 运行时(libstdc++/libgcc/libwinpthread),exe 单文件即可分发,
+    # 免去随包附带 DLL;系统级 UCRT(api-ms-win-crt-*)与 WINMM 仍由 Windows 自带。
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 endif ()
 
 include(FetchContent)

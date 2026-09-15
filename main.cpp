@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <chrono>
+#include <filesystem>
 #include <mutex>
 #include <random>
 #include <thread>
@@ -1380,8 +1381,21 @@ int main()
     refresh_prompt();
 
     // 游戏进行期间循环播放背景音乐（res/Famitracker_8bit.mp3）。
-    // 路径经 MUDGAME_RES_DIR 编译期注入，避免依赖运行目录。
-    const std::string kBgmFile = std::string(MUDGAME_RES_DIR) + "/Famitracker_8bit.mp3";
+    // 优先定位 exe 同级 res/（发布包随行资源），缺失时回落编译期注入路径。
+    std::string bgmDir = MUDGAME_RES_DIR;
+#ifdef _WIN32
+    {
+        wchar_t buf[4096];
+        const DWORD len = GetModuleFileNameW(nullptr, buf, 4096);
+        if (len > 0 && len < 4096)
+        {
+            const std::filesystem::path rel = std::filesystem::path(buf).parent_path() / "res";
+            if (std::filesystem::exists(rel / "Famitracker_8bit.mp3"))
+                bgmDir = rel.string();
+        }
+    }
+#endif
+    const std::string kBgmFile = bgmDir + "/Famitracker_8bit.mp3";
     mud::audio::MusicPlayer bgm;
     if (!bgm.start(kBgmFile))
     {
